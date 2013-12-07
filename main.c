@@ -1,7 +1,10 @@
 #include <stdio.h>
 #include <stdint.h>
 #include <stdlib.h>
+#include <stdbool.h>
+#include <string.h>
 #include <math.h>
+#include <libgen.h>
 
 #define RSC7 0x52534337
 #define BASE_SIZE 0x2000
@@ -38,11 +41,25 @@ uint32_t get_part_size(uint32_t flags) {
 
 int main(int argc, char** argv) {
 	if (argc < 2) {
-		fprintf(stderr, "usage: xdr2obj input.xdr\n");
+		fprintf(stderr, "usage: xdr2obj [opts] input.xdr\n");
+		fprintf(stderr, "options:\n\t--unmerge\tDon't merge all meshes into one object\n");
 		return 1;
 	}
 
 	char* xdr_file = argv[1];
+	bool merge = true;
+
+	if (argc > 2) {
+		if (!strcmp(argv[1], "--unmerge")) {
+			merge = false;
+			xdr_file = argv[2];
+		}
+	}
+
+	char xdr_name_cpy[256]; // copy so basename doesn't mangle it
+	strcpy(xdr_name_cpy, xdr_file);
+	char* model_basename = basename(xdr_name_cpy);
+	model_basename[strlen(model_basename)-4] = '\0'; // remove the extension
 
 	/* buffer the xdr file */
 	FILE* xdr_fd = fopen(xdr_file, "rb");
@@ -84,6 +101,15 @@ int main(int argc, char** argv) {
 
 	printf("found %i models\n", model_count);
 
+	char model_name[256];
+	sprintf(model_name, "%s.obj", model_basename);
+	FILE* model_fd;
+	if (merge) {
+		model_fd = fopen(model_name, "w");
+	}
+
+	uint32_t idx_ofs = 1;
+
 	/* parse models */
 	for (int i = 0; i < model_count; i++) {
 		uint32_t model_ptr = 0x10 + (get_i32_big(&xdr_buf[model_tbl_ptr+(i*4)]) & 0xFFFFFFF);
@@ -92,17 +118,17 @@ int main(int argc, char** argv) {
 
 		printf("found %i meshes in model %i\n", mesh_count, i);
 
-		char model_name[256];
-		sprintf(model_name, "%s.%i.obj", xdr_file, i);
-		FILE* model_fd = fopen(model_name, "w");
+		if (!merge) {
+			char mesh_name[256];
+			sprintf(mesh_name, "%s.%i.obj", model_basename, i);
+			model_fd = fopen(mesh_name, "w");
+			idx_ofs = 1;
+		}
 
-		uint32_t idx_ofs = 1;
+		fprintf(model_fd, "o %s%i\n", model_basename, i);
 
 		/* parse meshes */
 		for (int j = 0; j < mesh_count; j++) {
-			char mesh_name[256];
-			sprintf(mesh_name, "mesh_%i_%i", i, j);
-
 			uint32_t mesh_ptr = 0x10 + (get_i32_big(&xdr_buf[mesh_tbl_ptr+(j*4)]) & 0xFFFFFFF);
 
 			uint32_t vbuf_ptr = 0x10 + (get_i32_big(&xdr_buf[mesh_ptr+(3*4)]) & 0xFFFFFFF);
@@ -118,9 +144,7 @@ int main(int argc, char** argv) {
 			uint32_t vbuf_data_ptr = (get_i32_big(&xdr_buf[vbuf_ptr+(2*4)]) & 0xFFFFFFF) + 0x10 + gfx_ofs;
 			uint32_t ibuf_data_ptr = (get_i32_big(&xdr_buf[ibuf_ptr+(2*4)]) & 0xFFFFFFF) + 0x10 + gfx_ofs;
 
-			printf("mesh %s indices: %i triangles: %i vertices: %i\n", mesh_name, idx_count, tri_count, vert_count);
-
-			fprintf(model_fd, "g mesh_%i_%i\n", i, j);
+			fprintf(model_fd, "g %s_%i_%i\n", model_basename, i, j);
 
 			/* parse vertex buffer */
 			for (int k = 0; k < vert_count; k++) {
@@ -151,6 +175,12 @@ int main(int argc, char** argv) {
 			}
 			idx_ofs += vert_count;
 		}
+		if (!merge) {
+			fclose(model_fd);
+		}
+	}
+
+	if (merge) {
 		fclose(model_fd);
 	}
 }
