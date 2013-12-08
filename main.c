@@ -90,12 +90,13 @@ int main(int argc, char** argv) {
 	if (magic != RSC7) {
 		printf("magic mismatch %x expected %x\n", magic, RSC7);
 	}
-	uint32_t sys_flags = get_i32_big(&xdr_buf[4*2]) & 0xFFFFF;
-	uint32_t gfx_flags = get_i32_big(&xdr_buf[4*3]) & 0xFFFFF;
+	uint32_t sys_flags = get_i32_big(&xdr_buf[4*2]);
+	uint32_t gfx_flags = get_i32_big(&xdr_buf[4*3]);
 	uint32_t gfx_ofs = get_part_size(sys_flags);
 
 	/* Find the 'Model Collection' address */
-	uint32_t model_addr = 0x10 + (get_i32_big(&xdr_buf[0x50]) & 0xFFFFFFF);
+	uint32_t drawable_addr = 0x10 + (get_i32_big(&xdr_buf[0x30]) & 0xFFFFFFF);
+	uint32_t model_addr = 0x10 + (get_i32_big(&xdr_buf[drawable_addr + 0x40]) & 0xFFFFFFF);
 	uint32_t model_tbl_ptr = 0x10 + (get_i32_big(&xdr_buf[model_addr]) & 0xFFFFFFF);
 	uint16_t model_count = get_i16_big(&xdr_buf[model_addr + 4]);
 
@@ -141,8 +142,8 @@ int main(int argc, char** argv) {
 			uint32_t tri_count = get_i32_big(&xdr_buf[mesh_ptr+(12*4)]);
 			uint16_t vert_count = get_i16_big(&xdr_buf[mesh_ptr+(13*4)]);
 
-			uint32_t vbuf_data_ptr = (get_i32_big(&xdr_buf[vbuf_ptr+(2*4)]) & 0xFFFFFFF) + 0x10 + gfx_ofs;
-			uint32_t ibuf_data_ptr = (get_i32_big(&xdr_buf[ibuf_ptr+(2*4)]) & 0xFFFFFFF) + 0x10 + gfx_ofs;
+			uint32_t vbuf_data_ptr = ((get_i32_big(&xdr_buf[vbuf_ptr] + 8) & 0xFFFFFFF) + gfx_ofs + 0x10);
+			uint32_t ibuf_data_ptr = ((get_i32_big(&xdr_buf[ibuf_ptr] + 8) & 0xFFFFFFF) + gfx_ofs + 0x10);
 
 			fprintf(model_fd, "g %s_%i_%i\n", model_basename, i, j);
 
@@ -153,15 +154,12 @@ int main(int argc, char** argv) {
 				x = get_f32(&xdr_buf[vbuf_data_ptr+(vbuf_stride*k)+(0*4)]);
 				y = get_f32(&xdr_buf[vbuf_data_ptr+(vbuf_stride*k)+(1*4)]);
 				z = get_f32(&xdr_buf[vbuf_data_ptr+(vbuf_stride*k)+(2*4)]);
-				w = 1.0f;
-				if (vbuf_stride == 28) {
-					w = get_f32(&xdr_buf[vbuf_data_ptr+(vbuf_stride*k)+(3*4)]);
-				}
+				/*w = get_f32(&xdr_buf[vbuf_data_ptr+(vbuf_stride*k)+(3*4)]);
 				float u, v;
 				u = get_f32(&xdr_buf[vbuf_data_ptr+(vbuf_stride*k)+(5*4)]);
-				v = get_f32(&xdr_buf[vbuf_data_ptr+(vbuf_stride*k)+(6*4)]);
-				fprintf(model_fd, "v %f %f %f %f\n", x, y, z, w);
-				fprintf(model_fd, "vt %f %f\n", u, v);
+				v = get_f32(&xdr_buf[vbuf_data_ptr+(vbuf_stride*k)+(6*4)]);*/
+				fprintf(model_fd, "v %f %f %f\n", x, y, z);
+				//fprintf(model_fd, "vt %f %f\n", u, v);
 			}
 
 			/* parse index buffer */
@@ -171,7 +169,7 @@ int main(int argc, char** argv) {
 				p0 = get_i16_big(&xdr_buf[ibuf_data_ptr+(ibuf_stride*k)+(0*2)]) + idx_ofs;
 				p1 = get_i16_big(&xdr_buf[ibuf_data_ptr+(ibuf_stride*k)+(1*2)]) + idx_ofs;
 				p2 = get_i16_big(&xdr_buf[ibuf_data_ptr+(ibuf_stride*k)+(2*2)]) + idx_ofs;
-				fprintf(model_fd, "f %i/%i %i/%i %i/%i\n", p0, p0, p1, p1, p2, p2);
+				fprintf(model_fd, "f %i %i %i\n", p0, p1, p2);
 			}
 			idx_ofs += vert_count;
 		}
