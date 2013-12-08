@@ -39,9 +39,14 @@ uint32_t get_part_size(uint32_t flags) {
 	return size;
 }
 
+uint32_t gfx_ofs;
+
+#define _ADDR(ofs) ((ofs & 0xFFFFFFF) + 0x10)
+#define G_ADDR(ofs) ((ofs & 0xFFFFFFF) + gfx_ofs + 0x10)
+
 int main(int argc, char** argv) {
 	if (argc < 2) {
-		fprintf(stderr, "usage: xdr2obj [opts] input.xdr\n");
+		fprintf(stderr, "usage: xft2obj [opts] input.xft\n");
 		fprintf(stderr, "options:\n\t--unmerge\tDon't merge all meshes into one object\n");
 		return 1;
 	}
@@ -92,12 +97,12 @@ int main(int argc, char** argv) {
 	}
 	uint32_t sys_flags = get_i32_big(&xdr_buf[4*2]);
 	uint32_t gfx_flags = get_i32_big(&xdr_buf[4*3]);
-	uint32_t gfx_ofs = get_part_size(sys_flags);
+	gfx_ofs = get_part_size(sys_flags);
 
 	/* Find the 'Model Collection' address */
-	uint32_t drawable_addr = 0x10 + (get_i32_big(&xdr_buf[0x30]) & 0xFFFFFFF);
-	uint32_t model_addr = 0x10 + (get_i32_big(&xdr_buf[drawable_addr + 0x40]) & 0xFFFFFFF);
-	uint32_t model_tbl_ptr = 0x10 + (get_i32_big(&xdr_buf[model_addr]) & 0xFFFFFFF);
+	uint32_t drawable_addr = _ADDR(get_i32_big(&xdr_buf[0x30]));
+	uint32_t model_addr = _ADDR(get_i32_big(&xdr_buf[drawable_addr + 0x40]));
+	uint32_t model_tbl_ptr = _ADDR(get_i32_big(&xdr_buf[model_addr]));
 	uint16_t model_count = get_i16_big(&xdr_buf[model_addr + 4]);
 
 	printf("found %i models\n", model_count);
@@ -113,9 +118,9 @@ int main(int argc, char** argv) {
 
 	/* parse models */
 	for (int i = 0; i < model_count; i++) {
-		uint32_t model_ptr = 0x10 + (get_i32_big(&xdr_buf[model_tbl_ptr+(i*4)]) & 0xFFFFFFF);
-		uint32_t mesh_tbl_ptr = 0x10 + (get_i32_big(&xdr_buf[model_ptr+(1*4)]) & 0xFFFFFFF);
-		uint16_t mesh_count = (get_i16_big(&xdr_buf[model_ptr+(2*4)]) & 0xFFFFFFF);
+		uint32_t model_ptr = _ADDR(get_i32_big(&xdr_buf[model_tbl_ptr+(i*4)]));
+		uint32_t mesh_tbl_ptr = _ADDR(get_i32_big(&xdr_buf[model_ptr+(1*4)]));
+		uint16_t mesh_count = get_i16_big(&xdr_buf[model_ptr+(2*4)]);
 
 		printf("found %i meshes in model %i\n", mesh_count, i);
 
@@ -130,10 +135,10 @@ int main(int argc, char** argv) {
 
 		/* parse meshes */
 		for (int j = 0; j < mesh_count; j++) {
-			uint32_t mesh_ptr = 0x10 + (get_i32_big(&xdr_buf[mesh_tbl_ptr+(j*4)]) & 0xFFFFFFF);
+			uint32_t mesh_ptr = _ADDR(get_i32_big(&xdr_buf[mesh_tbl_ptr+(j*4)]));
 
-			uint32_t vbuf_ptr = 0x10 + (get_i32_big(&xdr_buf[mesh_ptr+(3*4)]) & 0xFFFFFFF);
-			uint32_t ibuf_ptr = 0x10 + (get_i32_big(&xdr_buf[mesh_ptr+(7*4)]) & 0xFFFFFFF);
+			uint32_t vbuf_ptr = _ADDR(get_i32_big(&xdr_buf[mesh_ptr+(3*4)]));
+			uint32_t ibuf_ptr = _ADDR(get_i32_big(&xdr_buf[mesh_ptr+(7*4)]));
 
 			uint16_t vbuf_stride = get_i16_big(&xdr_buf[vbuf_ptr+(1*4)]);
 			uint16_t ibuf_stride = 2*3;
@@ -142,8 +147,8 @@ int main(int argc, char** argv) {
 			uint32_t tri_count = get_i32_big(&xdr_buf[mesh_ptr+(12*4)]);
 			uint16_t vert_count = get_i16_big(&xdr_buf[mesh_ptr+(13*4)]);
 
-			uint32_t vbuf_data_ptr = ((get_i32_big(&xdr_buf[vbuf_ptr] + 8) & 0xFFFFFFF) + gfx_ofs + 0x10);
-			uint32_t ibuf_data_ptr = ((get_i32_big(&xdr_buf[ibuf_ptr] + 8) & 0xFFFFFFF) + gfx_ofs + 0x10);
+			uint32_t vbuf_data_ptr = G_ADDR(get_i32_big(&xdr_buf[vbuf_ptr] + 8));
+			uint32_t ibuf_data_ptr = G_ADDR(get_i32_big(&xdr_buf[ibuf_ptr] + 8));
 
 			fprintf(model_fd, "g %s_%i_%i\n", model_basename, i, j);
 
