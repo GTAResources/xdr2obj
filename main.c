@@ -99,7 +99,7 @@ int main(int argc, char** argv) {
 
 	char model_name[256];
 	sprintf(model_name, "%s.obj", model_basename);
-	FILE* model_fd = fopen(model_name, "w");
+	FILE* model_fd;
 
 	char model_basename_tmp[256];
 	uint32_t type = get_i32_big(&xdr_buf[0x10]);
@@ -108,24 +108,31 @@ int main(int argc, char** argv) {
 	switch (type) {
 	case MAGIC_XFT:
 		drawable_addr = _ADDR(get_i32_big(&xdr_buf[0x30]));
+		model_fd = fopen(model_name, "wb");
 		dump_drawable(model_fd, xdr_buf, drawable_addr, model_basename);
+		fclose(model_fd);
+		printf("Wrote %s\n", model_name);
 		break;
 	case MAGIC_XDD:
 		while ((drawable_addr = xdd_get_next_drawable(xdr_buf)) != 0) {
 			sprintf(model_basename_tmp, "%s_%i", model_basename, cur_drawable++);
+			sprintf(model_name, "%s.obj", model_basename_tmp);
+			model_fd = fopen(model_name, "wb");
 			dump_drawable(model_fd, xdr_buf, drawable_addr, model_basename_tmp);
+			fclose(model_fd);
+			printf("Wrote %s\n", model_name);
 		}
 		break;
 	case MAGIC_XDR:
+		model_fd = fopen(model_name, "wb");
 		dump_drawable(model_fd, xdr_buf, 0x10, model_basename);
+		fclose(model_fd);
+		printf("Wrote %s\n", model_name);
 		break;
 	default:
 		printf("unrecognized type %x\n", type);
-		fclose(model_fd);
 		return 1;
 	}
-	fclose(model_fd);
-	printf("Wrote %s\n", model_name);
 	return 0;
 }
 
