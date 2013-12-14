@@ -44,22 +44,20 @@ uint32_t gfx_ofs;
 #define _ADDR(ofs) ((ofs & 0xFFFFFFF) + 0x10)
 #define G_ADDR(ofs) ((ofs & 0xFFFFFFF) + gfx_ofs + 0x10)
 
+#define MAGIC_XDD 0x1C688100
+#define MAGIC_XDR 0x4C5B8100
+#define MAGIC_XFT 0x345b8100
+
+uint32_t xdd_get_next_drawable(char* xdr_buf);
+void dump_drawable(FILE* model_fd, char* xdr_buf, uint32_t drawable_addr, char* model_basename);
+
 int main(int argc, char** argv) {
 	if (argc < 2) {
-		fprintf(stderr, "usage: xdr2obj [opts] input.xdr\n");
-		fprintf(stderr, "options:\n\t--unmerge\tDon't merge all meshes into one object\n");
+		fprintf(stderr, "usage: xdr2obj input.[xdr,xdd,xft]\n");
 		return 1;
 	}
 
 	char* xdr_file = argv[1];
-	bool merge = true;
-
-	if (argc > 2) {
-		if (!strcmp(argv[1], "--unmerge")) {
-			merge = false;
-			xdr_file = argv[2];
-		}
-	}
 
 	char xdr_name_cpy[256]; // copy so basename doesn't mangle it
 	strcpy(xdr_name_cpy, xdr_file);
@@ -99,20 +97,54 @@ int main(int argc, char** argv) {
 	uint32_t gfx_flags = get_i32_big(&xdr_buf[4*3]);
 	gfx_ofs = get_part_size(sys_flags);
 
-	/* Find the 'Model Collection' address */
-	uint32_t drawable_addr = _ADDR(get_i32_big(&xdr_buf[0x30]));
+	char model_name[256];
+	sprintf(model_name, "%s.obj", model_basename);
+	FILE* model_fd = fopen(model_name, "w");
+
+	char model_basename_tmp[256];
+	uint32_t type = get_i32_big(&xdr_buf[0x10]);
+	uint32_t drawable_addr;
+	int cur_drawable = 0;
+	switch (type) {
+	case MAGIC_XFT:
+		drawable_addr = _ADDR(get_i32_big(&xdr_buf[0x30]));
+		dump_drawable(model_fd, xdr_buf, drawable_addr, model_basename);
+		break;
+	case MAGIC_XDD:
+		while ((drawable_addr = xdd_get_next_drawable(xdr_buf)) != 0) {
+			sprintf(model_basename_tmp, "%s_%i", model_basename, cur_drawable++);
+			dump_drawable(model_fd, xdr_buf, drawable_addr, model_basename_tmp);
+		}
+		break;
+	case MAGIC_XDR:
+		dump_drawable(model_fd, xdr_buf, 0x10, model_basename);
+		break;
+	default:
+		printf("unrecognized type %x\n", type);
+		fclose(model_fd);
+		return 1;
+	}
+	fclose(model_fd);
+	printf("Wrote %s\n", model_name);
+	return 0;
+}
+
+/* ptr is at 0x28, count is at 0x2C */
+uint32_t xdd_get_next_drawable(char* xdr_buf) {
+	static int next_drawable = 0;
+
+	uint32_t drawable_tbl = _ADDR(get_i32_big(&xdr_buf[0x28]));
+	int num_drawables = get_i16_big(&xdr_buf[0x2C]);
+	if (next_drawable >= num_drawables) {
+		return 0; // no more drawables;
+	}
+    return _ADDR(get_i32_big(&xdr_buf[drawable_tbl + ((next_drawable++) * 4)]));
+}
+
+void dump_drawable(FILE* model_fd, char* xdr_buf, uint32_t drawable_addr, char* model_basename) {
 	uint32_t model_addr = _ADDR(get_i32_big(&xdr_buf[drawable_addr + 0x40]));
 	uint32_t model_tbl_ptr = _ADDR(get_i32_big(&xdr_buf[model_addr]));
 	uint16_t model_count = get_i16_big(&xdr_buf[model_addr + 4]);
-
-	printf("found %i models\n", model_count);
-
-	char model_name[256];
-	sprintf(model_name, "%s.obj", model_basename);
-	FILE* model_fd;
-	if (merge) {
-		model_fd = fopen(model_name, "w");
-	}
 
 	uint32_t idx_ofs = 1;
 
@@ -122,16 +154,7 @@ int main(int argc, char** argv) {
 		uint32_t mesh_tbl_ptr = _ADDR(get_i32_big(&xdr_buf[model_ptr+(1*4)]));
 		uint16_t mesh_count = get_i16_big(&xdr_buf[model_ptr+(2*4)]);
 
-		printf("found %i meshes in model %i\n", mesh_count, i);
-
-		if (!merge) {
-			char mesh_name[256];
-			sprintf(mesh_name, "%s.%i.obj", model_basename, i);
-			model_fd = fopen(mesh_name, "w");
-			idx_ofs = 1;
-		}
-
-		fprintf(model_fd, "o %s%i\n", model_basename, i);
+		fprintf(model_fd, "o %s_%i\n", model_basename, i);
 
 		/* parse meshes */
 		for (int j = 0; j < mesh_count; j++) {
@@ -178,12 +201,5 @@ int main(int argc, char** argv) {
 			}
 			idx_ofs += vert_count;
 		}
-		if (!merge) {
-			fclose(model_fd);
-		}
-	}
-
-	if (merge) {
-		fclose(model_fd);
 	}
 }
