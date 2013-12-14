@@ -5,6 +5,7 @@
 #include <string.h>
 #include <math.h>
 #include <libgen.h>
+#include <ctype.h>
 
 #define RSC7 0x52534337
 #define BASE_SIZE 0x2000
@@ -44,10 +45,6 @@ uint32_t gfx_ofs;
 #define _ADDR(ofs) ((ofs & 0xFFFFFFF) + 0x10)
 #define G_ADDR(ofs) ((ofs & 0xFFFFFFF) + gfx_ofs + 0x10)
 
-#define MAGIC_XDD 0x1C688100
-#define MAGIC_XDR 0x4C5B8100
-#define MAGIC_XFT 0x345b8100
-
 uint32_t xdd_get_next_drawable(char* xdr_buf);
 void dump_drawable(FILE* model_fd, char* xdr_buf, uint32_t drawable_addr, char* model_basename);
 
@@ -58,6 +55,10 @@ int main(int argc, char** argv) {
 	}
 
 	char* xdr_file = argv[1];
+
+	char extension[8];
+	strcpy(extension, &xdr_file[strlen(xdr_file)-3]);
+	for (char* c = extension; *c; ++c) *c = tolower(*c);
 
 	char xdr_name_cpy[256]; // copy so basename doesn't mangle it
 	strcpy(xdr_name_cpy, xdr_file);
@@ -102,18 +103,16 @@ int main(int argc, char** argv) {
 	FILE* model_fd;
 
 	char model_basename_tmp[256];
-	uint32_t type = get_i32_big(&xdr_buf[0x10]);
 	uint32_t drawable_addr;
 	int cur_drawable = 0;
-	switch (type) {
-	case MAGIC_XFT:
+
+	if (!strcmp(extension, "xft")) {
 		drawable_addr = _ADDR(get_i32_big(&xdr_buf[0x30]));
 		model_fd = fopen(model_name, "wb");
 		dump_drawable(model_fd, xdr_buf, drawable_addr, model_basename);
 		fclose(model_fd);
 		printf("Wrote %s\n", model_name);
-		break;
-	case MAGIC_XDD:
+	} else if (!strcmp(extension, "xdd")) {
 		while ((drawable_addr = xdd_get_next_drawable(xdr_buf)) != 0) {
 			sprintf(model_basename_tmp, "%s_%i", model_basename, cur_drawable++);
 			sprintf(model_name, "%s.obj", model_basename_tmp);
@@ -122,15 +121,13 @@ int main(int argc, char** argv) {
 			fclose(model_fd);
 			printf("Wrote %s\n", model_name);
 		}
-		break;
-	case MAGIC_XDR:
+	} else if (!strcmp(extension, "xdr")) {
 		model_fd = fopen(model_name, "wb");
 		dump_drawable(model_fd, xdr_buf, 0x10, model_basename);
 		fclose(model_fd);
 		printf("Wrote %s\n", model_name);
-		break;
-	default:
-		printf("unrecognized type %x\n", type);
+	} else {
+		printf("unrecognized extension %s\n", extension);
 		return 1;
 	}
 	return 0;
