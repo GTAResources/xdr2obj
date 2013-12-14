@@ -46,7 +46,7 @@ uint32_t gfx_ofs;
 
 int main(int argc, char** argv) {
 	if (argc < 2) {
-		fprintf(stderr, "usage: xft2obj [opts] input.xft\n");
+		fprintf(stderr, "usage: xdr2obj [opts] input.xdr\n");
 		fprintf(stderr, "options:\n\t--unmerge\tDon't merge all meshes into one object\n");
 		return 1;
 	}
