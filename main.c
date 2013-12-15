@@ -31,6 +31,23 @@ float get_f32(char* buffer) {
 	return *f;
 }
 
+float get_f16(char* buffer) {
+	uint16_t i = get_i16_big(buffer);
+	float f = 0;
+
+	/* Lovingly borrowed from http://stackoverflow.com/a/15118210 */
+	uint32_t t1 = i & 0x7fff;
+	uint32_t t2 = i & 0x8000;
+	uint32_t t3 = i & 0x7c00;
+	t1 <<= 13;
+	t2 <<= 16;
+	t1 += 0x38000000;
+	t1 = (t3 == 0 ? 0 : t1);
+	t1 |= t2;
+	f = *((float*)&t1);
+	return f;
+}
+
 uint32_t get_part_size(uint32_t flags) {
 	uint32_t new_base_size = BASE_SIZE << (int)(flags & 0xf);
 	int size = (int)((((flags >> 17) & 0x7f) + (((flags >> 11) & 0x3f) << 1) + (((flags >> 7) & 0xf) << 2) + (((flags >> 5) & 0x3) << 3) + (((flags >> 4) & 0x1) << 4)) * new_base_size);
@@ -181,17 +198,16 @@ void dump_drawable(FILE* model_fd, char* xdr_buf, uint32_t drawable_addr, char* 
 
 			/* parse vertex buffer */
 			for (int k = 0; k < vert_count; k++) {
-				float x, y, z, w;
+				float x, y, z, w, u, v;
 				x = y = z = w = 0.0f;
 				x = get_f32(&xdr_buf[vbuf_data_ptr+(vbuf_stride*k)+(0*4)]);
 				y = get_f32(&xdr_buf[vbuf_data_ptr+(vbuf_stride*k)+(1*4)]);
 				z = get_f32(&xdr_buf[vbuf_data_ptr+(vbuf_stride*k)+(2*4)]);
-				/*w = get_f32(&xdr_buf[vbuf_data_ptr+(vbuf_stride*k)+(3*4)]);
-				float u, v;
-				u = get_f32(&xdr_buf[vbuf_data_ptr+(vbuf_stride*k)+(5*4)]);
-				v = get_f32(&xdr_buf[vbuf_data_ptr+(vbuf_stride*k)+(6*4)]);*/
+				u = get_f16(&xdr_buf[vbuf_data_ptr+(vbuf_stride*k)+(5*4)]);
+				v = get_f16(&xdr_buf[vbuf_data_ptr+(vbuf_stride*k)+(5*4)+2]);
+				v = (-v)+1;
 				fprintf(model_fd, "v %f %f %f\n", x, y, z);
-				//fprintf(model_fd, "vt %f %f\n", u, v);
+				fprintf(model_fd, "vt %f %f\n", u, v);
 			}
 
 			/* parse index buffer */
@@ -201,7 +217,7 @@ void dump_drawable(FILE* model_fd, char* xdr_buf, uint32_t drawable_addr, char* 
 				p0 = get_i16_big(&xdr_buf[ibuf_data_ptr+(ibuf_stride*k)+(0*2)]) + idx_ofs;
 				p1 = get_i16_big(&xdr_buf[ibuf_data_ptr+(ibuf_stride*k)+(1*2)]) + idx_ofs;
 				p2 = get_i16_big(&xdr_buf[ibuf_data_ptr+(ibuf_stride*k)+(2*2)]) + idx_ofs;
-				fprintf(model_fd, "f %i %i %i\n", p0, p1, p2);
+				fprintf(model_fd, "f %i/%i %i/%i %i/%i\n", p0, p0, p1, p1, p2, p2);
 			}
 			idx_ofs += vert_count;
 		}
