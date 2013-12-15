@@ -219,12 +219,6 @@ void dump_materials(char* xdr_buf, uint32_t shader_grp_addr, char* model_basenam
 		char* name = &xdr_buf[shader_tex_offset];
 
 		fprintf(mtl_fd, "newmtl %s\n", textures[i].mtl_name);
-		fprintf(mtl_fd, "Ka 1.000 1.000 1.000\n");
-		fprintf(mtl_fd, "Kd 1.000 1.000 1.000\n");
-		fprintf(mtl_fd, "Ks 1.000 1.000 1.000\n");
-		fprintf(mtl_fd, "Ns 10.000\n");
-		fprintf(mtl_fd, "d 1.000\n");
-		fprintf(mtl_fd, "illum 2\n");
 		fprintf(mtl_fd, "map_Kd %s.dds\n", name);
 	}
 	fclose(mtl_fd);
