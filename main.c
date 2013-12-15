@@ -162,7 +162,81 @@ uint32_t xdd_get_next_drawable(char* xdr_buf) {
     return _ADDR(get_i32_big(&xdr_buf[drawable_tbl + ((next_drawable++) * 4)]));
 }
 
+typedef struct {
+	uint32_t hash;
+	char name[32];
+	char mtl_name[32];
+} texture_t;
+texture_t* textures;
+
+void load_texture_dict(char* xdr_buf, uint32_t tex_addr, char* model_basename) {
+	uint32_t ptr_tbl_addr = _ADDR(get_i32_big(&xdr_buf[tex_addr + 0x18]));
+	uint32_t hash_tbl_addr = _ADDR(get_i32_big(&xdr_buf[tex_addr + 0x10]));
+	uint16_t num_textures = get_i16_big(&xdr_buf[tex_addr + 0x1C]);
+	printf("%i textures\n", num_textures);
+	if (num_textures == 0) {
+		textures = 0;
+		return;
+	}
+	textures = (texture_t*)malloc(sizeof(texture_t)*num_textures);
+
+	for (int i = 0; i < num_textures; i++) {
+        uint32_t tex_ptr = _ADDR(get_i32_big(&xdr_buf[ptr_tbl_addr + (i * 4)]));
+        uint32_t tex_hash = get_i32_big(&xdr_buf[hash_tbl_addr + (i * 4)]);
+        uint32_t name_ptr = _ADDR(get_i32_big(&xdr_buf[tex_ptr + 0x20]));
+        char* name = &xdr_buf[name_ptr];
+        uint16_t width = get_i16_big(&xdr_buf[tex_ptr + 0x38]);
+        uint16_t height = get_i16_big(&xdr_buf[tex_ptr + 0x3A]);
+
+		textures[i].hash = tex_hash;
+		sprintf(textures[i].name, "%s", name);
+		sprintf(textures[i].mtl_name, "%s_%i", model_basename, i);
+
+		printf("%x %s %s\n", textures[i].hash, textures[i].name, textures[i].mtl_name);
+	}
+}
+
+void dump_materials(char* xdr_buf, uint32_t shader_grp_addr, char* model_basename)
+{
+	uint32_t texture_dict_addr = _ADDR(get_i32_big(&xdr_buf[shader_grp_addr + 4]));
+	uint32_t shader_ptr_tbl = _ADDR(get_i32_big(&xdr_buf[shader_grp_addr + 8]));
+	uint16_t shader_count = get_i16_big(&xdr_buf[shader_grp_addr + 0xC]);
+
+	printf("%x %i\n", shader_ptr_tbl, shader_count);
+
+	load_texture_dict(xdr_buf, texture_dict_addr, model_basename);
+
+	char tmp[256];
+	sprintf(tmp, "%s.mtl", model_basename);
+	FILE* mtl_fd = fopen(tmp, "wb");
+
+	for (int i = 0; i < shader_count; i++) {
+		uint32_t shader_ptr_ptr = _ADDR(get_i32_big(&xdr_buf[shader_ptr_tbl+(i*4)])); // This seems to be new. 4 int32s
+		uint32_t shader_ptr = shader_ptr_ptr + 0x10;//_ADDR(get_i32_big(&xdr_buf[shader_ptr_ptr]));
+
+		uint32_t shader_param_offsets = _ADDR(get_i32_big(&xdr_buf[shader_ptr + 0x14]));
+		uint32_t shader_tex_offset = _ADDR(get_i32_big(&xdr_buf[shader_param_offsets + 0x20]));
+		char* name = &xdr_buf[shader_tex_offset];
+
+		fprintf(mtl_fd, "newmtl %s\n", textures[i].mtl_name);
+		fprintf(mtl_fd, "Ka 1.000 1.000 1.000\n");
+		fprintf(mtl_fd, "Kd 1.000 1.000 1.000\n");
+		fprintf(mtl_fd, "Ks 1.000 1.000 1.000\n");
+		fprintf(mtl_fd, "Ns 10.000\n");
+		fprintf(mtl_fd, "d 1.000\n");
+		fprintf(mtl_fd, "illum 2\n");
+		fprintf(mtl_fd, "map_Kd %s.dds\n", name);
+	}
+	fclose(mtl_fd);
+}
+
 void dump_drawable(FILE* model_fd, char* xdr_buf, uint32_t drawable_addr, char* model_basename) {
+	uint32_t shader_grp_addr = _ADDR(get_i32_big(&xdr_buf[drawable_addr + 8]));
+
+	dump_materials(xdr_buf, shader_grp_addr, model_basename);
+
+	fprintf(model_fd, "mtllib %s.mtl\n", model_basename);
+
 	uint32_t model_addr = _ADDR(get_i32_big(&xdr_buf[drawable_addr + 0x40]));
 	uint32_t model_tbl_ptr = _ADDR(get_i32_big(&xdr_buf[model_addr]));
 	uint16_t model_count = get_i16_big(&xdr_buf[model_addr + 4]);
@@ -173,6 +247,7 @@ void dump_drawable(FILE* model_fd, char* xdr_buf, uint32_t drawable_addr, char* 
 	for (int i = 0; i < model_count; i++) {
 		uint32_t model_ptr = _ADDR(get_i32_big(&xdr_buf[model_tbl_ptr+(i*4)]));
 		uint32_t mesh_tbl_ptr = _ADDR(get_i32_big(&xdr_buf[model_ptr+(1*4)]));
+		uint32_t mtl_tbl_ptr = _ADDR(get_i32_big(&xdr_buf[model_ptr+(4*4)]));
 		uint16_t mesh_count = get_i16_big(&xdr_buf[model_ptr+(2*4)]);
 
 		fprintf(model_fd, "o %s_%i\n", model_basename, i);
@@ -180,6 +255,8 @@ void dump_drawable(FILE* model_fd, char* xdr_buf, uint32_t drawable_addr, char* 
 		/* parse meshes */
 		for (int j = 0; j < mesh_count; j++) {
 			uint32_t mesh_ptr = _ADDR(get_i32_big(&xdr_buf[mesh_tbl_ptr+(j*4)]));
+			uint16_t mtl_id = get_i16_big(&xdr_buf[mtl_tbl_ptr+(j*2)]);
+			printf("mtl %s_%i_%i : %i\n", model_basename, i, j, mtl_id);
 
 			uint32_t vbuf_ptr = _ADDR(get_i32_big(&xdr_buf[mesh_ptr+(3*4)]));
 			uint32_t ibuf_ptr = _ADDR(get_i32_big(&xdr_buf[mesh_ptr+(7*4)]));
@@ -195,6 +272,7 @@ void dump_drawable(FILE* model_fd, char* xdr_buf, uint32_t drawable_addr, char* 
 			uint32_t ibuf_data_ptr = G_ADDR(get_i32_big(&xdr_buf[ibuf_ptr] + 8));
 
 			fprintf(model_fd, "g %s_%i_%i\n", model_basename, i, j);
+			fprintf(model_fd, "usemtl %s\n", textures[mtl_id].mtl_name);
 
 			/* parse vertex buffer */
 			for (int k = 0; k < vert_count; k++) {
@@ -221,5 +299,8 @@ void dump_drawable(FILE* model_fd, char* xdr_buf, uint32_t drawable_addr, char* 
 			}
 			idx_ofs += vert_count;
 		}
+	}
+	if (textures != 0) {
+		free(textures);
 	}
 }
