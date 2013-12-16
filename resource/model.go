@@ -28,7 +28,7 @@ type Model struct {
 }
 
 func (col *ModelCollection) Unpack(res *Container) (err error) {
-	if err = res.ParseStruct(&col.Collection); err != nil {
+	if err = res.Parse(&col.Collection); err != nil {
 		return err
 	}
 
@@ -57,7 +57,7 @@ func (col *ModelCollection) Unpack(res *Container) (err error) {
 }
 
 func (model *Model) Unpack(res *Container) (err error) {
-	if err = res.ParseStruct(&model.Header); err != nil {
+	if err = res.Parse(&model.Header); err != nil {
 		return err
 	}
 

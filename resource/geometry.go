@@ -24,13 +24,29 @@ type GeometryHeader struct {
 
 type Geometry struct {
 	GeometryHeader
+	Vertices VertexBuffer
+	Indices  IndexBuffer
 }
 
 func (geom *Geometry) Unpack(res *Container) (err error) {
-	if err = res.ParseStruct(&geom.GeometryHeader); err != nil {
+	if err = res.Parse(&geom.GeometryHeader); err != nil {
 		return
 	}
 
 	log.Printf("Found geometry with %v vertices %v triangles", geom.VertexCount, geom.FaceCount)
+
+	err = res.Detour(geom.VertexBuffer, func() error {
+		return geom.Vertices.Unpack(res)
+	})
+	if err != nil {
+		log.Printf("error parsing vertex buffer")
+	}
+
+	err = res.Detour(geom.IndexBuffer, func() error {
+		return geom.Indices.Unpack(res)
+	})
+	if err != nil {
+		log.Printf("error parsing index buffer")
+	}
 	return
 }

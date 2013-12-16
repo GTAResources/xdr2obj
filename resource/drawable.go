@@ -19,20 +19,16 @@ type Drawable struct {
 }
 
 func (drawable *Drawable) Unpack(res *Container) (err error) {
-	if err = res.ParseStruct(&drawable.Header); err != nil {
+	if err = res.Parse(&drawable.Header); err != nil {
 		return
 	}
 
-	if err = res.Jump(drawable.Header.ModelCollection); err != nil {
+	err = res.Detour(drawable.Header.ModelCollection, func() error {
+		return drawable.Models.Unpack(res)
+	})
+	if err != nil {
 		return
 	}
 
-	if err = drawable.Models.Unpack(res); err != nil {
-		return
-	}
-
-	if err = res.Return(); err != nil {
-		return
-	}
 	return
 }

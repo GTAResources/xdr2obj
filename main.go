@@ -17,11 +17,13 @@ func main() {
 		log.Fatal(err)
 	}
 
+	/* Unpack the container */
 	res := new(resource.Container)
 	if err = res.Unpack(data); err != nil {
 		log.Fatal(err)
 	}
 
+	/* Unpack the drawable at 0x10 */
 	var drawable resource.Drawable
 	if err = drawable.Unpack(res); err != nil {
 		log.Fatal(err)

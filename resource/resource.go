@@ -56,8 +56,20 @@ func (res *Container) Unpack(data []byte) (err error) {
 	return
 }
 
-func (res *Container) ParseStruct(data interface{}) (err error) {
+func (res *Container) Parse(data interface{}) (err error) {
 	return binary.Read(res, binary.BigEndian, data)
+}
+
+func (res *Container) Detour(addr Ptr32, callback func() error) (err error) {
+	if err = res.Jump(addr); err != nil {
+		return
+	}
+
+	defer func() {
+		err = res.Return()
+	}()
+
+	return callback()
 }
 
 func (res *Container) Peek(addr Ptr32, data interface{}) (err error) {
