@@ -47,7 +47,7 @@ Model (+model_tbl[i]: 0 <= i < model_count)
 |   0x10 | ptr32  | mat_collection  |
 |--------+--------+-----------------|
 
-Geometry Collection (+geom_collection[i]: 0 <= i < geom_count)
+Geometry (+geom_collection[i]: 0 <= i < geom_count)
 ------------------
 |--------+--------+----------------|
 | Offset | Type   | Field          |
@@ -151,10 +151,10 @@ vec4
 |--------+-------+-------|
 | Offset | Type  | Field |
 |--------+-------+-------|
-|    0x00 | float | x     |
-|    0x04 | float | y     |
-|    0x08 | float | z     |
-|    0x0C | float | w     |
+|   0x00 | float | x     |
+|   0x04 | float | y     |
+|   0x08 | float | z     |
+|   0x0C | float | w     |
 |--------+-------+-------|
 
 Vertex Format Flags
