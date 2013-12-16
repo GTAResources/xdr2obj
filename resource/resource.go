@@ -4,121 +4,144 @@ import (
 	"bytes"
 	"encoding/binary"
 	"errors"
-	"log"
 	"io"
 
 	"github.com/tgascoigne/xdr2obj/util/stack"
 )
 
 const (
-	rscMagic = 0x52534337
+	resMagic = 0x52534337
 	baseSize = 0x2000
 )
 
 var ErrInvalidResource error = errors.New("invalid resource")
 
-type Container struct {
-	Magic     uint32
-	sysFlags uint32
-	gfxFlags uint32
-	Data      []byte
-
-	SysOffset int64
-	GfxOffset int64
-	jumpStack stack.Stack
-	position int64
-	size int64
+type ContainerHeader struct {
+	Magic    uint32
+	_        uint32
+	SysFlags uint32
+	GfxFlags uint32
 }
 
-func (rsc *Container) Read(p []byte) (int, error) {
+type Container struct {
+	Header    ContainerHeader
+	SysOffset int64
+	GfxOffset int64
+
+	jumpStack stack.Stack
+	position  int64
+	size      int64
+	Data      []byte
+}
+
+func (res *Container) Unpack(data []byte) (err error) {
+	reader := bytes.NewReader(data)
+
+	header := &res.Header
+	if err = binary.Read(reader, binary.BigEndian, header); err != nil {
+		return
+	}
+
+	if header.Magic != resMagic {
+		err = ErrInvalidResource
+		return
+	}
+
+	res.SysOffset = 0x10
+	res.GfxOffset = res.SysOffset + int64(getPartitionSize(header.SysFlags))
+	res.jumpStack.Allocate(0xF)
+	res.Seek(0x50000000, 0) // seek to the start of the system partition
+	res.Data = data
+	res.size = int64(len(data))
+	return
+}
+
+func (res *Container) ParseStruct(data interface{}) (err error) {
+	return binary.Read(res, binary.BigEndian, data)
+}
+
+func (res *Container) Peek(addr Ptr32, data interface{}) (err error) {
+	if err = res.Jump(addr); err != nil {
+		return err
+	}
+
+	if err = binary.Read(res, binary.BigEndian, data); err != nil {
+		return err
+	}
+
+	if err = res.Return(); err != nil {
+		return err
+	}
+	return
+}
+
+func (res *Container) PeekElem(addr Ptr32, element int, data interface{}) (err error) {
+	return res.Peek(addr+Ptr32(element*intDataSize(data)), data)
+}
+
+/* Container Util functions */
+func (res *Container) Read(p []byte) (int, error) {
 	var read int64
 	toRead := int64(len(p))
 
-	if rsc.position + toRead >= rsc.size {
+	if res.position+toRead >= res.size {
 		return 0, io.EOF
 	}
 
-	for read < toRead && rsc.position + read < rsc.size {
-		p[read] = rsc.Data[rsc.position]
-		rsc.position++
+	for read < toRead && res.position+read < res.size {
+		p[read] = res.Data[res.position]
+		res.position++
 		read++
 	}
 	return int(read), nil
 }
 
-func (rsc *Container) Seek(offset int64, whence int) (int64, error) {
+func (res *Container) Skip(offset int64) (int64, error) {
+	return res.Seek(offset, 1)
+}
+
+func (res *Container) Seek(offset int64, whence int) (int64, error) {
 	var err error
 	if whence == 0 {
-		partition := (offset >> 24) & 0xFF;
-		part_offset := int64(offset & 0xFFFFFF);
+		partition := (offset >> 24) & 0xFF
+		part_offset := int64(offset & 0xFFFFFF)
 		switch partition {
 		case 0x50:
-			offset = rsc.SysOffset + part_offset
+			offset = res.SysOffset + part_offset
 			break
 		case 0x60:
-			offset = rsc.GfxOffset + part_offset
+			offset = res.GfxOffset + part_offset
 			break
 		}
- 	} else if whence == 1 {
-		offset = rsc.position + offset
+	} else if whence == 1 {
+		offset = res.position + offset
 	} else if whence == 2 {
-		offset = rsc.size - offset - 1
+		offset = res.size - offset - 1
 	}
 
-	if offset < 0 || offset >= rsc.size {
+	if offset < 0 || offset >= res.size {
 		err = io.EOF
 	}
 
-	rsc.position = offset
-	return rsc.position, err
+	res.position = offset
+	return res.position, err
 }
 
-func (rsc *Container) Tell() int64 {
-	return rsc.position
+func (res *Container) Tell() int64 {
+	return res.position
 }
 
-func (rsc *Container) Jump(offset int64) (int64, error) {
-	position := rsc.Tell()
-	rsc.jumpStack.Push(&stack.Item{position})
-	return rsc.Seek(offset, 0)
+func (res *Container) Jump(offset Ptr32) error {
+	position := res.Tell()
+	res.jumpStack.Push(&stack.Item{position})
+	_, err := res.Seek(int64(offset), 0)
+	return err
 }
 
-func (rsc *Container) Return() (int64, error) {
-	position := rsc.jumpStack.Pop()
-	return rsc.Seek(position.Value.(int64), 0)
-}
-
-func (rsc *Container) Unpack(data []byte) (err error) {
-	reader := bytes.NewReader(data)
-
-	if err = binary.Read(reader, binary.BigEndian, &rsc.Magic); err != nil {
-		return
-	}
-
-	if rsc.Magic != rscMagic {
-		err = ErrInvalidResource
-		return
-	}
-
-	if _, err = reader.Seek(0x4, 1); err != nil {
-		return
-	}
-	if err = binary.Read(reader, binary.BigEndian, &rsc.sysFlags); err != nil {
-		return
-	}
-	if err = binary.Read(reader, binary.BigEndian, &rsc.gfxFlags); err != nil {
-		return
-	}
-
-	rsc.SysOffset = 0x10
-	rsc.GfxOffset = rsc.SysOffset + int64(getPartitionSize(rsc.sysFlags))
-	rsc.jumpStack.Allocate(0xF);
-	rsc.Seek(0x50000000, 0) // seek to the start of the system partition
-	rsc.Data = data
-	rsc.size = int64(len(data))
-
-	log.Printf("sys: %x gfx: %x", rsc.SysOffset, rsc.GfxOffset)
-	return
+func (res *Container) Return() error {
+	position := res.jumpStack.Pop()
+	_, err := res.Seek(position.Value.(int64), 0)
+	return err
 }
 
 func getPartitionSize(flags uint32) uint32 {
