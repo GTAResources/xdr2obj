@@ -1,5 +1,9 @@
 package resource
 
+import (
+	"log"
+)
+
 type DrawableHeader struct {
 	_               uint32
 	BlockMap        Ptr32
@@ -11,24 +15,37 @@ type DrawableHeader struct {
 	ModelCollection Ptr32
 	LodCollections  [3]Ptr32
 	PointMax        Vec4
+	_               [6]uint32
+	_               Ptr32
+	Title           Ptr32
 }
 
 type Drawable struct {
 	Header DrawableHeader
 	Models ModelCollection
+	Title  string
 }
 
 func (drawable *Drawable) Unpack(res *Container) (err error) {
 	if err = res.Parse(&drawable.Header); err != nil {
-		return
+		return err
 	}
 
 	err = res.Detour(drawable.Header.ModelCollection, func() error {
 		return drawable.Models.Unpack(res)
 	})
 	if err != nil {
-		return
+		return err
 	}
+
+	err = res.Detour(drawable.Header.Title, func() error {
+		return res.Parse(&drawable.Title)
+	})
+	if err != nil {
+		return err
+	}
+
+	log.Printf("Reading drawable %v", drawable.Title)
 
 	return
 }

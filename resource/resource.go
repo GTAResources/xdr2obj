@@ -10,11 +10,13 @@ import (
 )
 
 const (
-	resMagic = 0x52534337
-	baseSize = 0x2000
+	resMagic  = 0x52534337
+	baseSize  = 0x2000
+	stringMax = 32
 )
 
 var ErrInvalidResource error = errors.New("invalid resource")
+var ErrInvalidString error = errors.New("invalid string")
 
 type ContainerHeader struct {
 	Magic    uint32
@@ -57,7 +59,27 @@ func (res *Container) Unpack(data []byte) (err error) {
 }
 
 func (res *Container) Parse(data interface{}) (err error) {
-	return binary.Read(res, binary.BigEndian, data)
+	switch data.(type) {
+	case *string:
+		/* find NULL */
+		var i int64
+		buf := make([]byte, stringMax)
+		err = ErrInvalidString
+		for i = 0; i < stringMax; i++ {
+			if res.Data[res.position+i] == 0 {
+				err = nil
+				break
+			}
+		}
+		str := data.(*string)
+		copy(buf, res.Data[res.position:res.position+i])
+		*str = string(buf)
+		res.position += i
+		return err
+	default:
+		return binary.Read(res, binary.BigEndian, data)
+	}
+	return nil
 }
 
 func (res *Container) Detour(addr Ptr32, callback func() error) (err error) {
@@ -120,10 +142,8 @@ func (res *Container) Seek(offset int64, whence int) (int64, error) {
 		switch partition {
 		case 0x50:
 			offset = res.SysOffset + part_offset
-			break
 		case 0x60:
 			offset = res.GfxOffset + part_offset
-			break
 		}
 	} else if whence == 1 {
 		offset = res.position + offset

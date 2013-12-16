@@ -9,20 +9,26 @@ System Partition
 ==================
 Drawable Header
 ------------------
-|--------+----------+------------------|
-| Offset | Type     | Field            |
-|--------+----------+------------------|
-|   0x00 | uint32   | vtable           |
-|   0x04 | ptr32    | block_map        |
-|   0x08 | ptr32    | shader_tbl       |
-|   0x0C | ptr32    | skeleton         |
-|   0x10 | vec4     | center_pos       |
-|   0x20 | vec4     | bounds_min       |
-|   0x30 | vec4     | bounds_max       |
-|   0x40 | ptr32    | model_collection |
-|   0x44 | ptr32[3] | lod_collections  |
-|   0x50 | vec4     | point_max        |
-|--------+----------+------------------|
+|--------+-----------+------------------|
+| Offset | Type      | Field            |
+|--------+-----------+------------------|
+|   0x00 | uint32    | vtable           |
+|   0x04 | ptr32     | block_map        |
+|   0x08 | ptr32     | shader_tbl       |
+|   0x0C | ptr32     | skeleton         |
+|   0x10 | vec4      | center_pos       |
+|   0x20 | vec4      | bounds_min       |
+|   0x30 | vec4      | bounds_max       |
+|   0x40 | ptr32     | model_collection |
+|   0x44 | ptr32[3]  | lod_collections  |
+|   0x50 | vec4      | point_max        |
+|   0x60 | uint16    |                  |
+|   0x62 | uint16    |                  |
+|   0x64 | uint32[4] |                  |
+|   0x74 | uint32    |                  |
+|   0x78 | ptr32     |                  |
+|   0x7C | ptr32     | title            |
+|--------+-----------+------------------|
 
 Model Collection (+model_collection)
 ------------------

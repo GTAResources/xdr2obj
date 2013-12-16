@@ -12,6 +12,7 @@ func main() {
 	var data []byte
 	var err error
 
+	/* Read the file */
 	in_file := os.Args[1]
 	if data, err = ioutil.ReadFile(in_file); err != nil {
 		log.Fatal(err)
@@ -28,4 +29,5 @@ func main() {
 	if err = drawable.Unpack(res); err != nil {
 		log.Fatal(err)
 	}
+
 }
