@@ -88,7 +88,11 @@ func (res *Container) Detour(addr Ptr32, callback func() error) (err error) {
 	}
 
 	defer func() {
-		err = res.Return()
+		if err == nil {
+			err = res.Return()
+		} else {
+			res.Return()
+		}
 	}()
 
 	return callback()

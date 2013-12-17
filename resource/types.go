@@ -25,6 +25,8 @@ type Vec4 struct {
 	W float32
 }
 
+type WorldCoord Vec4
+
 type Tri struct {
 	A uint16
 	B uint16

@@ -4,12 +4,6 @@ import (
 	"log"
 )
 
-type ModelCollectionHeader struct {
-	Lookup Ptr32
-	Count  uint16
-	Size   uint16
-}
-
 type ModelCollection struct {
 	Collection
 	Models []Model
@@ -36,13 +30,13 @@ func (col *ModelCollection) Unpack(res *Container) (err error) {
 
 	/* Read our model headers */
 	col.Models = make([]Model, col.Count)
-	for i, model := range col.Models {
+	for i := range col.Models {
 		if err = col.JumpTo(res, i); err != nil {
 			log.Printf("Error reading model")
 			continue
 		}
 
-		if err = model.Unpack(res); err != nil {
+		if err = col.Models[i].Unpack(res); err != nil {
 			log.Printf("Error reading model")
 			continue
 		}
@@ -66,13 +60,13 @@ func (model *Model) Unpack(res *Container) (err error) {
 	log.Printf("Reading %v geometries", col.Count)
 
 	model.Geometry = make([]Geometry, col.Count)
-	for i, geom := range model.Geometry {
+	for i := range model.Geometry {
 		if err = col.JumpTo(res, i); err != nil {
 			log.Printf("Error reading geometry")
 			continue
 		}
 
-		if err = geom.Unpack(res); err != nil {
+		if err = model.Geometry[i].Unpack(res); err != nil {
 			log.Printf("Error reading geometry")
 			continue
 		}

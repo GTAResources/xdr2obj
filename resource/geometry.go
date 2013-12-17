@@ -33,8 +33,6 @@ func (geom *Geometry) Unpack(res *Container) (err error) {
 		return
 	}
 
-	log.Printf("Found geometry with %v vertices %v triangles", geom.VertexCount, geom.FaceCount)
-
 	err = res.Detour(geom.VertexBuffer, func() error {
 		return geom.Vertices.Unpack(res)
 	})

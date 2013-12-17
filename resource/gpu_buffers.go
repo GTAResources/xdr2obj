@@ -27,8 +27,8 @@ type VertexInfo struct {
 
 type Vertex struct {
 	/* This is the only information we can make use of for now */
-	Position  Vec4
-	TexCoords Vec2
+	WorldCoord /* Position: Vertex.[X,Y,Z,W] */
+	UV         /* UV: Vertex.[U,V] */
 }
 
 type VertexBuffer struct {
@@ -55,21 +55,21 @@ func (buf *VertexBuffer) Unpack(res *Container) (err error) {
 		buffer := make([]byte, buf.Stride)
 		reader := bytes.NewReader(buffer)
 
-		for _, v := range buf.Vertex {
+		for i := range buf.Vertex {
 			/* Read the vertex into our local buffer */
 			if size, err := res.Read(buffer); uint16(size) != buf.Stride || err != nil {
 				return err
 			}
 
 			/* Parse out the info we can */
-			if err = binary.Read(reader, binary.BigEndian, &v.Position); err != nil {
+			if err = binary.Read(reader, binary.BigEndian, &buf.Vertex[i].WorldCoord); err != nil {
 				return err
 			}
 			reader.Seek(0, 0)
 		}
 		return nil
 	})
-	return
+	return err
 }
 
 type IndexHeader struct {
@@ -97,14 +97,14 @@ func (buf *IndexBuffer) Unpack(res *Container) (err error) {
 		buffer := make([]byte, buf.Stride)
 		reader := bytes.NewReader(buffer)
 
-		for _, i := range buf.Index {
+		for i := range buf.Index {
 			/* Read the index into our local buffer */
 			if size, err := res.Read(buffer); size != buf.Stride || err != nil {
 				return err
 			}
 
 			/* Parse out the info we can */
-			if err = binary.Read(reader, binary.BigEndian, &i); err != nil {
+			if err = binary.Read(reader, binary.BigEndian, &buf.Index[i]); err != nil {
 				return err
 			}
 			reader.Seek(0, 0)

@@ -1,9 +1,5 @@
 package resource
 
-import (
-	"log"
-)
-
 type DrawableHeader struct {
 	_               uint32
 	BlockMap        Ptr32
@@ -44,8 +40,6 @@ func (drawable *Drawable) Unpack(res *Container) (err error) {
 	if err != nil {
 		return err
 	}
-
-	log.Printf("Reading drawable %v", drawable.Title)
 
 	return
 }
