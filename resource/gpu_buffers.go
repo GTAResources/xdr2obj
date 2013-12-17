@@ -34,7 +34,7 @@ type Vertex struct {
 type VertexBuffer struct {
 	VertexHeader
 	VertexInfo
-	Vertex []Vertex
+	Vertex []*Vertex
 }
 
 func (buf *VertexBuffer) Unpack(res *Container) (err error) {
@@ -49,20 +49,23 @@ func (buf *VertexBuffer) Unpack(res *Container) (err error) {
 		return
 	}
 
-	buf.Vertex = make([]Vertex, buf.Count)
+	buf.Vertex = make([]*Vertex, buf.Count)
+	for i := range buf.Vertex {
+		buf.Vertex[i] = new(Vertex)
+	}
 
 	err = res.Detour(buf.Buffer, func() error {
 		buffer := make([]byte, buf.Stride)
 		reader := bytes.NewReader(buffer)
 
-		for i := range buf.Vertex {
+		for _, vert := range buf.Vertex {
 			/* Read the vertex into our local buffer */
 			if size, err := res.Read(buffer); uint16(size) != buf.Stride || err != nil {
 				return err
 			}
 
 			/* Parse out the info we can */
-			if err = binary.Read(reader, binary.BigEndian, &buf.Vertex[i].WorldCoord); err != nil {
+			if err = binary.Read(reader, binary.BigEndian, &vert.WorldCoord); err != nil {
 				return err
 			}
 			reader.Seek(0, 0)
@@ -81,7 +84,7 @@ type IndexHeader struct {
 
 type IndexBuffer struct {
 	IndexHeader
-	Index  []Tri
+	Index  []*Tri
 	Stride int /* todo: is this referenced in the geom? */
 }
 
@@ -91,20 +94,23 @@ func (buf *IndexBuffer) Unpack(res *Container) (err error) {
 		return
 	}
 
-	buf.Index = make([]Tri, buf.Count/3)
+	buf.Index = make([]*Tri, buf.Count/3)
+	for i := range buf.Index {
+		buf.Index[i] = new(Tri)
+	}
 
 	err = res.Detour(buf.Buffer, func() error {
 		buffer := make([]byte, buf.Stride)
 		reader := bytes.NewReader(buffer)
 
-		for i := range buf.Index {
+		for _, idx := range buf.Index {
 			/* Read the index into our local buffer */
 			if size, err := res.Read(buffer); size != buf.Stride || err != nil {
 				return err
 			}
 
 			/* Parse out the info we can */
-			if err = binary.Read(reader, binary.BigEndian, &buf.Index[i]); err != nil {
+			if err = binary.Read(reader, binary.BigEndian, idx); err != nil {
 				return err
 			}
 			reader.Seek(0, 0)

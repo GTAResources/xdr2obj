@@ -6,7 +6,7 @@ import (
 
 type ModelCollection struct {
 	Collection
-	Models []Model
+	Models []*Model
 }
 
 type ModelHeader struct {
@@ -18,7 +18,7 @@ type ModelHeader struct {
 
 type Model struct {
 	Header   ModelHeader
-	Geometry []Geometry
+	Geometry []*Geometry
 }
 
 func (col *ModelCollection) Unpack(res *Container) (err error) {
@@ -29,14 +29,18 @@ func (col *ModelCollection) Unpack(res *Container) (err error) {
 	log.Printf("Reading %v models", col.Count)
 
 	/* Read our model headers */
-	col.Models = make([]Model, col.Count)
+	col.Models = make([]*Model, col.Count)
 	for i := range col.Models {
+		col.Models[i] = new(Model)
+	}
+
+	for i, model := range col.Models {
 		if err = col.JumpTo(res, i); err != nil {
 			log.Printf("Error reading model")
 			continue
 		}
 
-		if err = col.Models[i].Unpack(res); err != nil {
+		if err = model.Unpack(res); err != nil {
 			log.Printf("Error reading model")
 			continue
 		}
@@ -59,14 +63,18 @@ func (model *Model) Unpack(res *Container) (err error) {
 
 	log.Printf("Reading %v geometries", col.Count)
 
-	model.Geometry = make([]Geometry, col.Count)
+	model.Geometry = make([]*Geometry, col.Count)
 	for i := range model.Geometry {
+		model.Geometry[i] = new(Geometry)
+	}
+
+	for i, geom := range model.Geometry {
 		if err = col.JumpTo(res, i); err != nil {
 			log.Printf("Error reading geometry")
 			continue
 		}
 
-		if err = model.Geometry[i].Unpack(res); err != nil {
+		if err = geom.Unpack(res); err != nil {
 			log.Printf("Error reading geometry")
 			continue
 		}

@@ -12,8 +12,7 @@ import (
 func Export(drawable *resource.Drawable) (err error) {
 	baseName := drawable.Title[0 : strings.LastIndex(drawable.Title, ".")-1]
 	objFileName := fmt.Sprintf("%v.obj", baseName)
-	objFile, err := os.Create(objFileName)
-	if err != nil {
+	if objFile, err := os.Create(objFileName); err != nil {
 		return err
 	}
 	defer func() {
@@ -23,7 +22,7 @@ func Export(drawable *resource.Drawable) (err error) {
 	for i, model := range drawable.Models.Models {
 		modelName := fmt.Sprintf("%v_%v", baseName, i)
 		fmt.Fprintf(objFile, "o %v\n", modelName)
-		if err = exportModel(&model, objFile, modelName); err != nil {
+		if err = exportModel(model, objFile, modelName); err != nil {
 			return err
 		}
 	}
@@ -34,8 +33,8 @@ func Export(drawable *resource.Drawable) (err error) {
 
 func exportModel(model *resource.Model, file *os.File, name string) (err error) {
 	indexBase := uint16(1)
-	for i := range model.Geometry {
-		geom := &model.Geometry[i]
+
+	for i, geom := range model.Geometry {
 		fmt.Fprintf(file, "g %v_%v\n", name, i)
 		if err = exportGeometry(geom, file, name, indexBase); err != nil {
 			return err
