@@ -2,6 +2,8 @@ package resource
 
 import (
 	"encoding/binary"
+
+	"github.com/tgascoigne/xdr2obj/resource/types"
 )
 
 func parseStruct(res *Container, data interface{}) (err error) {
@@ -35,7 +37,7 @@ func intDataSize(data interface{}) int {
 		return 8 * len(data)
 	case []uint64:
 		return 8 * len(data)
-	case Ptr32, *Ptr32:
+	case types.Ptr32, *types.Ptr32:
 		return 4
 	}
 	return 0

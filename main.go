@@ -7,6 +7,7 @@ import (
 
 	"github.com/tgascoigne/xdr2obj/export/obj"
 	"github.com/tgascoigne/xdr2obj/resource"
+	"github.com/tgascoigne/xdr2obj/resource/drawable"
 )
 
 func main() {
@@ -26,7 +27,7 @@ func main() {
 	}
 
 	/* Unpack the drawable at 0x10 */
-	drawable := new(resource.Drawable)
+	drawable := new(drawable.Drawable)
 	if err = drawable.Unpack(res); err != nil {
 		log.Fatal(err)
 	}

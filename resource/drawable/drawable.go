@@ -1,37 +1,50 @@
 package drawable
 
 import (
-	"encoding/binary"
-	"log"
-
 	"github.com/tgascoigne/xdr2obj/resource"
-	"github.com/tgascoigne/xdr2obj/util"
+	"github.com/tgascoigne/xdr2obj/resource/types"
 )
 
-type Drawable struct {
+type DrawableHeader struct {
 	_               uint32
-	blockMap        util.Ptr32
-	shaderTable     util.Ptr32
-	skeletonData    util.Ptr32
-	center          util.Vec4
-	boundsMin       util.Vec4
-	boundsMax       util.Vec4
-	modelCollection util.Ptr32
-	lodCollections  [3]util.Ptr32
-	pointMax        util.Vec4
+	BlockMap        types.Ptr32
+	ShaderTable     types.Ptr32
+	SkeletonData    types.Ptr32
+	Center          types.Vec4
+	BoundsMin       types.Vec4
+	BoundsMax       types.Vec4
+	ModelCollection types.Ptr32
+	LodCollections  [3]types.Ptr32
+	PointMax        types.Vec4
+	_               [6]uint32
+	_               types.Ptr32
+	Title           types.Ptr32
+}
+
+type Drawable struct {
+	Header DrawableHeader
+	Models ModelCollection
+	Title  string
 }
 
 func (drawable *Drawable) Unpack(res *resource.Container) (err error) {
-	if err = binary.Read(res, binary.BigEndian, drawable); err != nil {
-		return
+	if err = res.Parse(&drawable.Header); err != nil {
+		return err
 	}
-	log.Print(drawable)
-	/*	if _, err = res.Skip(0x4); err != nil { /* Skip vtable * /
-			return
-		}
-		if err = binary.Read(res, binary.BigEndian, &drawable.blockMap); err != nil {
-			return
-		}*/
+
+	err = res.Detour(drawable.Header.ModelCollection, func() error {
+		return drawable.Models.Unpack(res)
+	})
+	if err != nil {
+		return err
+	}
+
+	err = res.Detour(drawable.Header.Title, func() error {
+		return res.Parse(&drawable.Title)
+	})
+	if err != nil {
+		return err
+	}
 
 	return
 }

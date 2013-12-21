@@ -1,19 +1,22 @@
-package resource
+package drawable
 
 import (
 	"log"
+
+	"github.com/tgascoigne/xdr2obj/resource"
+	"github.com/tgascoigne/xdr2obj/resource/types"
 )
 
 type ModelCollection struct {
-	Collection
+	resource.Collection
 	Models []*Model
 }
 
 type ModelHeader struct {
 	_                  uint32 /* vtable */
-	GeometryCollection Collection
-	_                  Ptr32 /* Ptr to vectors */
-	MaterialLookup     Ptr32
+	GeometryCollection resource.Collection
+	_                  types.Ptr32 /* Ptr to vectors */
+	MaterialLookup     types.Ptr32
 }
 
 type Model struct {
@@ -21,7 +24,7 @@ type Model struct {
 	Geometry []*Geometry
 }
 
-func (col *ModelCollection) Unpack(res *Container) (err error) {
+func (col *ModelCollection) Unpack(res *resource.Container) (err error) {
 	if err = res.Parse(&col.Collection); err != nil {
 		return err
 	}
@@ -54,7 +57,7 @@ func (col *ModelCollection) Unpack(res *Container) (err error) {
 	return
 }
 
-func (model *Model) Unpack(res *Container) (err error) {
+func (model *Model) Unpack(res *resource.Container) (err error) {
 	if err = res.Parse(&model.Header); err != nil {
 		return err
 	}

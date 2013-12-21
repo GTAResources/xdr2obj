@@ -1,20 +1,23 @@
-package resource
+package drawable
 
 import (
 	"bytes"
 	"encoding/binary"
+
+	"github.com/tgascoigne/xdr2obj/resource"
+	"github.com/tgascoigne/xdr2obj/resource/types"
 )
 
 type VertexHeader struct {
 	_      uint32 /* vtable */
 	Stride uint16
 	_      uint16
-	Buffer Ptr32
+	Buffer types.Ptr32
 	Count  uint32
-	_      Ptr32 /* Buffer */
+	_      types.Ptr32 /* Buffer */
 	_      uint32
-	Info   Ptr32
-	_      Ptr32
+	Info   types.Ptr32
+	_      types.Ptr32
 }
 
 type VertexInfo struct {
@@ -27,8 +30,8 @@ type VertexInfo struct {
 
 type Vertex struct {
 	/* This is the only information we can make use of for now */
-	WorldCoord /* Position: Vertex.[X,Y,Z,W] */
-	UV         /* UV: Vertex.[U,V] */
+	types.WorldCoord /* Position: Vertex.[X,Y,Z,W] */
+	types.UV         /* UV: Vertex.[U,V] */
 }
 
 type VertexBuffer struct {
@@ -37,7 +40,7 @@ type VertexBuffer struct {
 	Vertex []*Vertex
 }
 
-func (buf *VertexBuffer) Unpack(res *Container) (err error) {
+func (buf *VertexBuffer) Unpack(res *resource.Container) (err error) {
 	if err = res.Parse(&buf.VertexHeader); err != nil {
 		return
 	}
@@ -78,25 +81,25 @@ func (buf *VertexBuffer) Unpack(res *Container) (err error) {
 type IndexHeader struct {
 	_      uint32 /* vtable */
 	Count  uint32
-	Buffer Ptr32
-	Info   Ptr32
+	Buffer types.Ptr32
+	Info   types.Ptr32
 }
 
 type IndexBuffer struct {
 	IndexHeader
-	Index  []*Tri
+	Index  []*types.Tri
 	Stride int /* todo: is this referenced in the geom? */
 }
 
-func (buf *IndexBuffer) Unpack(res *Container) (err error) {
-	buf.Stride = 3 * 2 // 3*uint16
+func (buf *IndexBuffer) Unpack(res *resource.Container) (err error) {
+	buf.Stride = 3 * 2 // 3*uint16 /* is this stored anywhere? */
 	if err = res.Parse(&buf.IndexHeader); err != nil {
 		return
 	}
 
-	buf.Index = make([]*Tri, buf.Count/3)
+	buf.Index = make([]*types.Tri, buf.Count/3)
 	for i := range buf.Index {
-		buf.Index[i] = new(Tri)
+		buf.Index[i] = new(types.Tri)
 	}
 
 	err = res.Detour(buf.Buffer, func() error {

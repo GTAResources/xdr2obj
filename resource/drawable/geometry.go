@@ -1,18 +1,21 @@
-package resource
+package drawable
 
 import (
 	"log"
+x
+	"github.com/tgascoigne/xdr2obj/resource"
+	"github.com/tgascoigne/xdr2obj/resource/types"
 )
 
 type GeometryHeader struct {
 	_             uint32 /* vtable */
 	_             uint32
 	_             uint32
-	VertexBuffer  Ptr32
+	VertexBuffer  types.Ptr32
 	_             uint32
 	_             uint32
 	_             uint32
-	IndexBuffer   Ptr32
+	IndexBuffer   types.Ptr32
 	_             uint32
 	_             uint32
 	_             uint32
@@ -28,7 +31,7 @@ type Geometry struct {
 	Indices  IndexBuffer
 }
 
-func (geom *Geometry) Unpack(res *Container) (err error) {
+func (geom *Geometry) Unpack(res *resource.Container) (err error) {
 	if err = res.Parse(&geom.GeometryHeader); err != nil {
 		return
 	}

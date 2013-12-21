@@ -6,6 +6,7 @@ import (
 	"errors"
 	"io"
 
+	"github.com/tgascoigne/xdr2obj/resource/types"
 	"github.com/tgascoigne/xdr2obj/util/stack"
 )
 
@@ -82,7 +83,7 @@ func (res *Container) Parse(data interface{}) (err error) {
 	return nil
 }
 
-func (res *Container) Detour(addr Ptr32, callback func() error) (err error) {
+func (res *Container) Detour(addr types.Ptr32, callback func() error) (err error) {
 	if err = res.Jump(addr); err != nil {
 		return
 	}
@@ -98,7 +99,7 @@ func (res *Container) Detour(addr Ptr32, callback func() error) (err error) {
 	return callback()
 }
 
-func (res *Container) Peek(addr Ptr32, data interface{}) (err error) {
+func (res *Container) Peek(addr types.Ptr32, data interface{}) (err error) {
 	if err = res.Jump(addr); err != nil {
 		return err
 	}
@@ -113,8 +114,8 @@ func (res *Container) Peek(addr Ptr32, data interface{}) (err error) {
 	return
 }
 
-func (res *Container) PeekElem(addr Ptr32, element int, data interface{}) (err error) {
-	return res.Peek(addr+Ptr32(element*intDataSize(data)), data)
+func (res *Container) PeekElem(addr types.Ptr32, element int, data interface{}) (err error) {
+	return res.Peek(addr+types.Ptr32(element*intDataSize(data)), data)
 }
 
 /* Container Util functions */
@@ -167,7 +168,7 @@ func (res *Container) Tell() int64 {
 	return res.position
 }
 
-func (res *Container) Jump(offset Ptr32) error {
+func (res *Container) Jump(offset types.Ptr32) error {
 	position := res.Tell()
 	res.jumpStack.Push(&stack.Item{position})
 	_, err := res.Seek(int64(offset), 0)

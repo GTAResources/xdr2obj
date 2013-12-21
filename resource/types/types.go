@@ -1,4 +1,4 @@
-package resource
+package types
 
 type Ptr32 uint32
 

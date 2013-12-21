@@ -6,13 +6,14 @@ import (
 	"os"
 	"strings"
 
-	"github.com/tgascoigne/xdr2obj/resource"
+	"github.com/tgascoigne/xdr2obj/resource/drawable"
 )
 
-func Export(drawable *resource.Drawable) (err error) {
+func Export(drawable *drawable.Drawable) (err error) {
 	baseName := drawable.Title[0 : strings.LastIndex(drawable.Title, ".")-1]
 	objFileName := fmt.Sprintf("%v.obj", baseName)
-	if objFile, err := os.Create(objFileName); err != nil {
+	var objFile *os.File
+	if objFile, err = os.Create(objFileName); err != nil {
 		return err
 	}
 	defer func() {
@@ -31,7 +32,7 @@ func Export(drawable *resource.Drawable) (err error) {
 	return nil
 }
 
-func exportModel(model *resource.Model, file *os.File, name string) (err error) {
+func exportModel(model *drawable.Model, file *os.File, name string) (err error) {
 	indexBase := uint16(1)
 
 	for i, geom := range model.Geometry {
@@ -46,7 +47,7 @@ func exportModel(model *resource.Model, file *os.File, name string) (err error) 
 }
 
 // idxBase is added to each index specified. Used for grouping geometry properly
-func exportGeometry(geom *resource.Geometry, file *os.File, name string, idxBase uint16) (err error) {
+func exportGeometry(geom *drawable.Geometry, file *os.File, name string, idxBase uint16) (err error) {
 	for _, vert := range geom.Vertices.Vertex {
 		/* todo: Do we need the W here? Is it even a W coord? */
 		fmt.Fprintf(file, "v %v %v %v\n", vert.X, vert.Y, vert.Z)
