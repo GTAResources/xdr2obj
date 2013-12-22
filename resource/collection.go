@@ -12,16 +12,16 @@ type Collection struct {
 	Size   uint16
 }
 
-func (col *Collection) JumpTo(res *Container, i int) (err error) {
+func (col *Collection) JumpTo(res *Container, i int) error {
 	var start types.Ptr32
-	if err = res.PeekElem(col.Lookup, i, &start); err != nil {
+	if err := res.PeekElem(col.Lookup, i, &start); err != nil {
 		log.Printf("Error performing collection lookup")
-		return
+		return err
 	}
 
-	if err = res.Jump(start); err != nil {
+	if err := res.Jump(start); err != nil {
 		log.Printf("Error performing collection lookup")
-		return
+		return err
 	}
-	return
+	return nil
 }

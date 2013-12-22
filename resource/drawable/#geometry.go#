@@ -36,7 +36,7 @@ func (geom *Geometry) Unpack(res *resource.Container) error {
 		return err
 	}
 
-	if err := res.Detour(geom.VertexBuffer, func() error {
+	if err :x= res.Detour(geom.VertexBuffer, func() error {
 		return geom.Vertices.Unpack(res)
 	}); err != nil {
 		log.Printf("error parsing vertex buffer")

@@ -27,24 +27,22 @@ type Drawable struct {
 	Title  string
 }
 
-func (drawable *Drawable) Unpack(res *resource.Container) (err error) {
-	if err = res.Parse(&drawable.Header); err != nil {
+func (drawable *Drawable) Unpack(res *resource.Container) error {
+	if err := res.Parse(&drawable.Header); err != nil {
 		return err
 	}
 
-	err = res.Detour(drawable.Header.ModelCollection, func() error {
+	if err := res.Detour(drawable.Header.ModelCollection, func() error {
 		return drawable.Models.Unpack(res)
-	})
-	if err != nil {
+	}); err != nil {
 		return err
 	}
 
-	err = res.Detour(drawable.Header.Title, func() error {
+	if err := res.Detour(drawable.Header.Title, func() error {
 		return res.Parse(&drawable.Title)
-	})
-	if err != nil {
+	}); err != nil {
 		return err
 	}
 
-	return
+	return nil
 }

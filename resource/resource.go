@@ -37,17 +37,16 @@ type Container struct {
 	Data      []byte
 }
 
-func (res *Container) Unpack(data []byte) (err error) {
+func (res *Container) Unpack(data []byte) error {
 	reader := bytes.NewReader(data)
 
 	header := &res.Header
-	if err = binary.Read(reader, binary.BigEndian, header); err != nil {
-		return
+	if err := binary.Read(reader, binary.BigEndian, header); err != nil {
+		return err
 	}
 
 	if header.Magic != resMagic {
-		err = ErrInvalidResource
-		return
+		return ErrInvalidResource
 	}
 
 	res.SysOffset = 0x10
@@ -56,10 +55,11 @@ func (res *Container) Unpack(data []byte) (err error) {
 	res.Seek(0x50000000, 0) // seek to the start of the system partition
 	res.Data = data
 	res.size = int64(len(data))
-	return
+	return nil
 }
 
-func (res *Container) Parse(data interface{}) (err error) {
+func (res *Container) Parse(data interface{}) error {
+	var err error
 	switch data.(type) {
 	case *string:
 		/* find NULL */
@@ -83,38 +83,32 @@ func (res *Container) Parse(data interface{}) (err error) {
 	return nil
 }
 
-func (res *Container) Detour(addr types.Ptr32, callback func() error) (err error) {
-	if err = res.Jump(addr); err != nil {
-		return
+func (res *Container) Detour(addr types.Ptr32, callback func() error) error {
+	if err := res.Jump(addr); err != nil {
+		return err
 	}
 
-	defer func() {
-		if err == nil {
-			err = res.Return()
-		} else {
-			res.Return()
-		}
-	}()
+	defer res.Return()
 
 	return callback()
 }
 
-func (res *Container) Peek(addr types.Ptr32, data interface{}) (err error) {
-	if err = res.Jump(addr); err != nil {
+func (res *Container) Peek(addr types.Ptr32, data interface{}) error {
+	if err := res.Jump(addr); err != nil {
 		return err
 	}
 
-	if err = binary.Read(res, binary.BigEndian, data); err != nil {
+	if err := binary.Read(res, binary.BigEndian, data); err != nil {
 		return err
 	}
 
-	if err = res.Return(); err != nil {
+	if err := res.Return(); err != nil {
 		return err
 	}
-	return
+	return nil
 }
 
-func (res *Container) PeekElem(addr types.Ptr32, element int, data interface{}) (err error) {
+func (res *Container) PeekElem(addr types.Ptr32, element int, data interface{}) error {
 	return res.Peek(addr+types.Ptr32(element*intDataSize(data)), data)
 }
 

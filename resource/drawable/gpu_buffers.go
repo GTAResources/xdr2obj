@@ -35,16 +35,15 @@ type VertexBuffer struct {
 	Vertex []*Vertex
 }
 
-func (buf *VertexBuffer) Unpack(res *resource.Container) (err error) {
-	if err = res.Parse(&buf.VertexHeader); err != nil {
-		return
+func (buf *VertexBuffer) Unpack(res *resource.Container) error {
+	if err := res.Parse(&buf.VertexHeader); err != nil {
+		return err
 	}
 
-	err = res.Detour(buf.Info, func() error {
+	if err := res.Detour(buf.Info, func() error {
 		return res.Parse(&buf.VertexInfo)
-	})
-	if err != nil {
-		return
+	}); err != nil {
+		return err
 	}
 
 	log.Printf("Vert stride: %v format: %v", buf.Stride, buf.Format)
@@ -54,15 +53,17 @@ func (buf *VertexBuffer) Unpack(res *resource.Container) (err error) {
 		buf.Vertex[i] = new(Vertex)
 	}
 
-	err = res.Detour(buf.Buffer, func() error {
+	if err := res.Detour(buf.Buffer, func() error {
 		for _, vert := range buf.Vertex {
-			if err = vert.Unpack(res, buf); err != nil {
+			if err := vert.Unpack(res, buf); err != nil {
 				return err
 			}
 		}
 		return nil
-	})
-	return err
+	}); err != nil {
+		return err
+	}
+	return nil
 }
 
 type IndexHeader struct {
@@ -78,10 +79,10 @@ type IndexBuffer struct {
 	Stride int /* todo: is this referenced in the geom? */
 }
 
-func (buf *IndexBuffer) Unpack(res *resource.Container) (err error) {
+func (buf *IndexBuffer) Unpack(res *resource.Container) error {
 	buf.Stride = 3 * 2 // 3*uint16 /* is this stored anywhere? */
-	if err = res.Parse(&buf.IndexHeader); err != nil {
-		return
+	if err := res.Parse(&buf.IndexHeader); err != nil {
+		return err
 	}
 
 	buf.Index = make([]*types.Tri, buf.Count/3)
@@ -89,7 +90,7 @@ func (buf *IndexBuffer) Unpack(res *resource.Container) (err error) {
 		buf.Index[i] = new(types.Tri)
 	}
 
-	err = res.Detour(buf.Buffer, func() error {
+	if err := res.Detour(buf.Buffer, func() error {
 		buffer := make([]byte, buf.Stride)
 		reader := bytes.NewReader(buffer)
 
@@ -100,12 +101,14 @@ func (buf *IndexBuffer) Unpack(res *resource.Container) (err error) {
 			}
 
 			/* Parse out the info we can */
-			if err = binary.Read(reader, binary.BigEndian, idx); err != nil {
+			if err := binary.Read(reader, binary.BigEndian, idx); err != nil {
 				return err
 			}
 			reader.Seek(0, 0)
 		}
 		return nil
-	})
-	return
+	}); err != nil {
+		return err
+	}
+	return nil
 }

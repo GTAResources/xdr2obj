@@ -6,7 +6,7 @@ import (
 	"github.com/tgascoigne/xdr2obj/resource/types"
 )
 
-func parseStruct(res *Container, data interface{}) (err error) {
+func parseStruct(res *Container, data interface{}) error {
 	return binary.Read(res, binary.BigEndian, data)
 }
 

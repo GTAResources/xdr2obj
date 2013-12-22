@@ -14,21 +14,21 @@ var (
 	ErrUnsupportedVertexFormat = errors.New("unsupported vertex format")
 )
 
-func Export(drawable *drawable.Drawable) (err error) {
+func Export(drawable *drawable.Drawable) error {
 	baseName := drawable.Title[0 : strings.LastIndex(drawable.Title, ".")-1]
 	objFileName := fmt.Sprintf("%v.obj", baseName)
+
 	var objFile *os.File
+	var err error
 	if objFile, err = os.Create(objFileName); err != nil {
 		return err
 	}
-	defer func() {
-		objFile.Close()
-	}()
+	defer objFile.Close()
 
 	for i, model := range drawable.Models.Models {
 		modelName := fmt.Sprintf("%v_%v", baseName, i)
 		fmt.Fprintf(objFile, "o %v\n", modelName)
-		if err = exportModel(model, objFile, modelName); err != nil {
+		if err := exportModel(model, objFile, modelName); err != nil {
 			return err
 		}
 	}
@@ -37,12 +37,12 @@ func Export(drawable *drawable.Drawable) (err error) {
 	return nil
 }
 
-func exportModel(model *drawable.Model, file *os.File, name string) (err error) {
+func exportModel(model *drawable.Model, file *os.File, name string) error {
 	indexBase := uint16(1)
 
 	for i, geom := range model.Geometry {
 		fmt.Fprintf(file, "g %v_%v\n", name, i)
-		if err = exportGeometry(geom, file, name, indexBase); err != nil {
+		if err := exportGeometry(geom, file, name, indexBase); err != nil {
 			return err
 		}
 
@@ -52,7 +52,7 @@ func exportModel(model *drawable.Model, file *os.File, name string) (err error) 
 }
 
 // idxBase is added to each index specified. Used for grouping geometry properly
-func exportGeometry(geom *drawable.Geometry, file *os.File, name string, idxBase uint16) (err error) {
+func exportGeometry(geom *drawable.Geometry, file *os.File, name string, idxBase uint16) error {
 	if !geom.Vertices.Format.HasXYZ() {
 		return ErrUnsupportedVertexFormat
 	}

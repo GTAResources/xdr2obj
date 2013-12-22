@@ -24,8 +24,8 @@ type Model struct {
 	Geometry []*Geometry
 }
 
-func (col *ModelCollection) Unpack(res *resource.Container) (err error) {
-	if err = res.Parse(&col.Collection); err != nil {
+func (col *ModelCollection) Unpack(res *resource.Container) error {
+	if err := res.Parse(&col.Collection); err != nil {
 		return err
 	}
 
@@ -38,27 +38,27 @@ func (col *ModelCollection) Unpack(res *resource.Container) (err error) {
 	}
 
 	for i, model := range col.Models {
-		if err = col.JumpTo(res, i); err != nil {
+		if err := col.JumpTo(res, i); err != nil {
 			log.Printf("Error reading model")
-			continue
+			return err
 		}
 
-		if err = model.Unpack(res); err != nil {
+		if err := model.Unpack(res); err != nil {
 			log.Printf("Error reading model")
-			continue
+			return err
 		}
 
-		if err = res.Return(); err != nil {
+		if err := res.Return(); err != nil {
 			log.Printf("Error reading model")
-			continue
+			return err
 		}
 	}
 
-	return
+	return nil
 }
 
-func (model *Model) Unpack(res *resource.Container) (err error) {
-	if err = res.Parse(&model.Header); err != nil {
+func (model *Model) Unpack(res *resource.Container) error {
+	if err := res.Parse(&model.Header); err != nil {
 		return err
 	}
 
@@ -72,21 +72,21 @@ func (model *Model) Unpack(res *resource.Container) (err error) {
 	}
 
 	for i, geom := range model.Geometry {
-		if err = col.JumpTo(res, i); err != nil {
+		if err := col.JumpTo(res, i); err != nil {
 			log.Printf("Error reading geometry")
-			continue
+			return err
 		}
 
-		if err = geom.Unpack(res); err != nil {
+		if err := geom.Unpack(res); err != nil {
 			log.Printf("Error reading geometry")
-			continue
+			return err
 		}
 
-		if err = res.Return(); err != nil {
+		if err := res.Return(); err != nil {
 			log.Printf("Error reading geometry")
-			continue
+			return err
 		}
 	}
 
-	return
+	return nil
 }
