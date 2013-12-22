@@ -2,7 +2,7 @@ package drawable
 
 import (
 	"log"
-x
+
 	"github.com/tgascoigne/xdr2obj/resource"
 	"github.com/tgascoigne/xdr2obj/resource/types"
 )

@@ -3,6 +3,7 @@ package drawable
 import (
 	"bytes"
 	"encoding/binary"
+	"log"
 
 	"github.com/tgascoigne/xdr2obj/resource"
 	"github.com/tgascoigne/xdr2obj/resource/types"
@@ -21,17 +22,11 @@ type VertexHeader struct {
 }
 
 type VertexInfo struct {
-	Format uint32
+	Format VertexFormat
 	_      uint16 /* Stride */
 	_      uint16 /* correlated with Stride */
 	_      uint32 /* usually 0xAA111111 */
 	_      uint32 /* usually 0x1199a996 */
-}
-
-type Vertex struct {
-	/* This is the only information we can make use of for now */
-	types.WorldCoord /* Position: Vertex.[X,Y,Z,W] */
-	types.UV         /* UV: Vertex.[U,V] */
 }
 
 type VertexBuffer struct {
@@ -52,26 +47,18 @@ func (buf *VertexBuffer) Unpack(res *resource.Container) (err error) {
 		return
 	}
 
+	log.Printf("Vert stride: %v format: %v", buf.Stride, buf.Format)
+
 	buf.Vertex = make([]*Vertex, buf.Count)
 	for i := range buf.Vertex {
 		buf.Vertex[i] = new(Vertex)
 	}
 
 	err = res.Detour(buf.Buffer, func() error {
-		buffer := make([]byte, buf.Stride)
-		reader := bytes.NewReader(buffer)
-
 		for _, vert := range buf.Vertex {
-			/* Read the vertex into our local buffer */
-			if size, err := res.Read(buffer); uint16(size) != buf.Stride || err != nil {
+			if err = vert.Unpack(res, buf); err != nil {
 				return err
 			}
-
-			/* Parse out the info we can */
-			if err = binary.Read(reader, binary.BigEndian, &vert.WorldCoord); err != nil {
-				return err
-			}
-			reader.Seek(0, 0)
 		}
 		return nil
 	})

@@ -1,12 +1,17 @@
 package obj
 
 import (
+	"errors"
 	"fmt"
 	"log"
 	"os"
 	"strings"
 
 	"github.com/tgascoigne/xdr2obj/resource/drawable"
+)
+
+var (
+	ErrUnsupportedVertexFormat = errors.New("unsupported vertex format")
 )
 
 func Export(drawable *drawable.Drawable) (err error) {
@@ -48,13 +53,27 @@ func exportModel(model *drawable.Model, file *os.File, name string) (err error) 
 
 // idxBase is added to each index specified. Used for grouping geometry properly
 func exportGeometry(geom *drawable.Geometry, file *os.File, name string, idxBase uint16) (err error) {
+	if !geom.Vertices.Format.HasXYZ() {
+		return ErrUnsupportedVertexFormat
+	}
+
 	for _, vert := range geom.Vertices.Vertex {
 		/* todo: Do we need the W here? Is it even a W coord? */
 		fmt.Fprintf(file, "v %v %v %v\n", vert.X, vert.Y, vert.Z)
+		if geom.Vertices.Format.HasUV0() {
+			u := vert.U.Value()
+			v := (-vert.V.Value()) + 1
+			fmt.Fprintf(file, "vt %v %v\n", u, v)
+		}
 	}
 
 	for _, tri := range geom.Indices.Index {
-		fmt.Fprintf(file, "f %v %v %v\n", idxBase+tri.A, idxBase+tri.B, idxBase+tri.C)
+		a, b, c := idxBase+tri.A, idxBase+tri.B, idxBase+tri.C
+		if geom.Vertices.Format.HasUV0() {
+			fmt.Fprintf(file, "f %v/%v %v/%v %v/%v\n", a, a, b, b, c, c)
+		} else {
+			fmt.Fprintf(file, "f %v %v %v\n", a, b, c)
+		}
 	}
 	return nil
 }
