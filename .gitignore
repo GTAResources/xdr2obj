@@ -1,3 +1,9 @@
+# Resources
 *.obj
 *.mtl
-*.dds 
+*.dds
+
+# Emacs stuff
+*~
+\#*\#
+.\#*

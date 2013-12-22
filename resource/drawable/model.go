@@ -16,7 +16,7 @@ type ModelHeader struct {
 	_                  uint32 /* vtable */
 	GeometryCollection resource.Collection
 	_                  types.Ptr32 /* Ptr to vectors */
-	MaterialLookup     types.Ptr32
+	MaterialMap        types.Ptr32
 }
 
 type Model struct {
