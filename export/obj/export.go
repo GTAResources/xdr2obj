@@ -19,10 +19,13 @@ const (
 	BitmapFormat = "dds"
 )
 
+var materialNames map[int]string
+
 func Export(drawable *drawable.Drawable) error {
 	baseName := drawable.Title[0 : strings.LastIndex(drawable.Title, ".")-1]
 	objFileName := fmt.Sprintf("%v.obj", baseName)
 	mtlFileName := fmt.Sprintf("%v.mtl", baseName)
+	materialNames = make(map[int]string)
 
 	var objFile, mtlFile *os.File
 	var err error
@@ -36,8 +39,8 @@ func Export(drawable *drawable.Drawable) error {
 	defer mtlFile.Close()
 
 	for i, shader := range drawable.Shaders.Shaders {
-		materialName := fmt.Sprintf("%v_%v", baseName, i)
-		fmt.Fprintf(mtlFile, "newmtl %v\n", materialName)
+		materialNames[i] = fmt.Sprintf("%v_%v", baseName, i)
+		fmt.Fprintf(mtlFile, "newmtl %v\n", materialNames[i])
 		if err := exportMaterial(shader, mtlFile); err != nil {
 			return err
 		}
@@ -86,6 +89,10 @@ func exportModel(model *drawable.Model, file *os.File, name string) error {
 func exportGeometry(geom *drawable.Geometry, file *os.File, name string, idxBase uint16) error {
 	if !geom.Vertices.Format.HasXYZ() {
 		return ErrUnsupportedVertexFormat
+	}
+
+	if geom.Shader != drawable.ShaderNone {
+		fmt.Fprintf(file, "usemtl %v\n", materialNames[int(geom.Shader)])
 	}
 
 	for _, vert := range geom.Vertices.Vertex {

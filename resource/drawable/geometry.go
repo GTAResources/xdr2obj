@@ -2,6 +2,7 @@ package drawable
 
 import (
 	"log"
+	"math"
 
 	"github.com/tgascoigne/xdr2obj/resource"
 	"github.com/tgascoigne/xdr2obj/resource/types"
@@ -29,7 +30,12 @@ type Geometry struct {
 	GeometryHeader
 	Vertices VertexBuffer
 	Indices  IndexBuffer
+	Shader   uint16
 }
+
+var (
+	ShaderNone = uint16(math.MaxUint16)
+)
 
 func (geom *Geometry) Unpack(res *resource.Container) error {
 	res.Parse(&geom.GeometryHeader)

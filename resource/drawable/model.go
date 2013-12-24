@@ -16,7 +16,7 @@ type ModelHeader struct {
 	_                  uint32 /* vtable */
 	GeometryCollection resource.Collection
 	_                  types.Ptr32 /* Ptr to vectors */
-	MaterialMap        types.Ptr32
+	ShaderMappings     types.Ptr32
 }
 
 type Model struct {
@@ -76,6 +76,14 @@ func (model *Model) Unpack(res *resource.Container) error {
 		if err := geom.Unpack(res); err != nil {
 			log.Printf("Error reading geometry")
 			return err
+		}
+
+		if model.Header.ShaderMappings.Valid() {
+			if err := res.PeekElem(model.Header.ShaderMappings, i, &geom.Shader); err != nil {
+				return err
+			}
+		} else {
+			geom.Shader = ShaderNone
 		}
 
 		if err := res.Return(); err != nil {

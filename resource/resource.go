@@ -74,7 +74,7 @@ func (res *Container) Parse(data interface{}) {
 		}
 		str := data.(*string)
 		copy(buf, res.Data[res.position:res.position+i])
-		*str = string(buf)
+		*str = string(buf[:i])
 		res.position += i
 	default:
 		err = binary.Read(res, binary.BigEndian, data)
