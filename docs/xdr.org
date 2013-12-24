@@ -33,6 +33,95 @@ Drawable Header
 |   0x7C | ptr32     | title            |
 |--------+-----------+------------------|
 
+Shader Collection (+shader_tbl)
+------------------
+
+|--------+--------+--------------------|
+| Offset | Type   | Field              |
+|--------+--------+--------------------|
+|   0x00 | uint32 | vtable             |
+|   0x04 | ptr32  | texture_dictionary |
+|   0x08 | ptr32  | shader_tbl         |
+|   0x0C | uint16 | shader_count       |
+|   0x0E | uint16 | shader_size        |
+|--------+--------+--------------------|
+
+Shader Header (+shader_tbl[i]: 0 <= i < shader_count)
+------------------
+
+|--------+--------+--------------------|
+| Offset | Type   | Field              |
+|--------+--------+--------------------|
+|   0x00 | ptr32  | shader_params      |
+|   0x04 | uint32 |                    |
+|   0x08 | uint8  | shader_param_count |
+|   0x09 | uint8  |                    |
+|   0x0A | uint16 |                    |
+|   0x0C | uint32 |                    |
+|   0x10 | uint32 |                    |
+|   0x14 | uint32 |                    |
+|   0x18 | uint32 |                    |
+|   0x1C | uint32 |                    |
+|--------+--------+--------------------|
+
+Shader Parameter (+shader_params+(i*0x8): 0 <= i < shader_param_count)
+------------------
+
+|--------+--------+-------------------+----------------------------|
+| Offset | Type   | Field             |                            |
+|--------+--------+-------------------+----------------------------|
+|   0x00 | uint32 | shader_param_type | See Shader Parameter Types |
+|   0x04 | ptr32  | shader_param      |                            |
+|--------+--------+-------------------+----------------------------|
+
+Shader Parameter Types
+------------------
+
+Not all parameter types are known about, and the uint32 may actually
+be a combination of smaller data types.
+
+|------------+--------+-----------------|
+|      Value | Type   |                 |
+|------------+--------+-----------------|
+| 0x00000000 | Bitmap | Diffuse texture |
+| 0x00020000 | Bitmap | Normal texture  |
+| 0x01DF0000 |        |                 |
+| 0x01DE0000 |        |                 |
+| 0x01DD0000 |        |                 |
+| 0x01DC0000 |        |                 |
+| 0x01DB0000 |        |                 |
+| 0x01DA0000 |        |                 |
+| 0x01D90000 |        |                 |
+| 0x01D80000 |        |                 |
+| 0x01FF0000 |        |                 |
+| 0x01FE0000 |        |                 |
+| 0x01FD0000 |        |                 |
+|------------+--------+-----------------|
+
+Bitmap Parameter
+------------------
+
+|--------+--------+--------|
+| Offset | Type   | Field  |
+|--------+--------+--------|
+|   0x00 | uint32 | vtable |
+|   0x04 | uint32 |        |
+|   0x08 | uint32 |        |
+|   0x0C | uint32 |        |
+|   0x10 | uint32 |        |
+|   0x14 | uint32 |        |
+|   0x18 | uint32 |        |
+|   0x1C | uint32 |        |
+|   0x20 | ptr32  | name   |
+|   0x24 | uint32 |        |
+|   0x28 | uint32 |        |
+|   0x2C | uint32 |        |
+|   0x20 | uint32 |        |
+|   0x24 | ptr32  |        |
+|   0x28 | uint32 |        |
+|   0x2C | uint32 |        |
+|--------+--------+--------|
+
 Model Collection (+model_collection)
 ------------------
 

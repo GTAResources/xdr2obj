@@ -25,18 +25,16 @@ type Model struct {
 }
 
 func (col *ModelCollection) Unpack(res *resource.Container) error {
-	if err := res.Parse(&col.Collection); err != nil {
-		return err
-	}
+	res.Parse(&col.Collection)
 
 	log.Printf("Reading %v models", col.Count)
 
-	/* Read our model headers */
 	col.Models = make([]*Model, col.Count)
 	for i := range col.Models {
 		col.Models[i] = new(Model)
 	}
 
+	/* Read our model headers */
 	for i, model := range col.Models {
 		if err := col.JumpTo(res, i); err != nil {
 			log.Printf("Error reading model")
@@ -58,9 +56,7 @@ func (col *ModelCollection) Unpack(res *resource.Container) error {
 }
 
 func (model *Model) Unpack(res *resource.Container) error {
-	if err := res.Parse(&model.Header); err != nil {
-		return err
-	}
+	res.Parse(&model.Header)
 
 	col := &model.Header.GeometryCollection
 

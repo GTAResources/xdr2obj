@@ -36,12 +36,11 @@ type VertexBuffer struct {
 }
 
 func (buf *VertexBuffer) Unpack(res *resource.Container) error {
-	if err := res.Parse(&buf.VertexHeader); err != nil {
-		return err
-	}
+	res.Parse(&buf.VertexHeader)
 
 	if err := res.Detour(buf.Info, func() error {
-		return res.Parse(&buf.VertexInfo)
+		res.Parse(&buf.VertexInfo)
+		return nil
 	}); err != nil {
 		return err
 	}
@@ -81,9 +80,7 @@ type IndexBuffer struct {
 
 func (buf *IndexBuffer) Unpack(res *resource.Container) error {
 	buf.Stride = 3 * 2 // 3*uint16 /* is this stored anywhere? */
-	if err := res.Parse(&buf.IndexHeader); err != nil {
-		return err
-	}
+	res.Parse(&buf.IndexHeader)
 
 	buf.Index = make([]*types.Tri, buf.Count/3)
 	for i := range buf.Index {

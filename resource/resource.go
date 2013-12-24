@@ -58,7 +58,7 @@ func (res *Container) Unpack(data []byte) error {
 	return nil
 }
 
-func (res *Container) Parse(data interface{}) error {
+func (res *Container) Parse(data interface{}) {
 	var err error
 	switch data.(type) {
 	case *string:
@@ -76,11 +76,12 @@ func (res *Container) Parse(data interface{}) error {
 		copy(buf, res.Data[res.position:res.position+i])
 		*str = string(buf)
 		res.position += i
-		return err
 	default:
-		return binary.Read(res, binary.BigEndian, data)
+		err = binary.Read(res, binary.BigEndian, data)
 	}
-	return nil
+	if err != nil {
+		panic(err)
+	}
 }
 
 func (res *Container) Detour(addr types.Ptr32, callback func() error) error {

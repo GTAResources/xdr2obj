@@ -2,6 +2,7 @@ package drawable
 
 import (
 	"github.com/tgascoigne/xdr2obj/resource"
+	"github.com/tgascoigne/xdr2obj/resource/drawable/shader"
 	"github.com/tgascoigne/xdr2obj/resource/types"
 )
 
@@ -22,14 +23,21 @@ type DrawableHeader struct {
 }
 
 type Drawable struct {
-	Header DrawableHeader
-	Models ModelCollection
-	Title  string
+	Header  DrawableHeader
+	Shaders shader.Group
+	Models  ModelCollection
+	Title   string
 }
 
 func (drawable *Drawable) Unpack(res *resource.Container) error {
-	if err := res.Parse(&drawable.Header); err != nil {
-		return err
+	res.Parse(&drawable.Header)
+
+	if drawable.Header.ShaderTable.Valid() {
+		if err := res.Detour(drawable.Header.ShaderTable, func() error {
+			return drawable.Shaders.Unpack(res)
+		}); err != nil {
+			return err
+		}
 	}
 
 	if err := res.Detour(drawable.Header.ModelCollection, func() error {
@@ -39,7 +47,8 @@ func (drawable *Drawable) Unpack(res *resource.Container) error {
 	}
 
 	if err := res.Detour(drawable.Header.Title, func() error {
-		return res.Parse(&drawable.Title)
+		res.Parse(&drawable.Title)
+		return nil
 	}); err != nil {
 		return err
 	}

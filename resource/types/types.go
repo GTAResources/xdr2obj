@@ -6,6 +6,10 @@ import (
 
 type Ptr32 uint32
 
+func (p Ptr32) Valid() bool {
+	return p != 0
+}
+
 type float16 uint16
 
 func (i float16) Value() float32 {

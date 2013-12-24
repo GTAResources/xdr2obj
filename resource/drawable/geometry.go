@@ -32,9 +32,7 @@ type Geometry struct {
 }
 
 func (geom *Geometry) Unpack(res *resource.Container) error {
-	if err := res.Parse(&geom.GeometryHeader); err != nil {
-		return err
-	}
+	res.Parse(&geom.GeometryHeader)
 
 	if err := res.Detour(geom.VertexBuffer, func() error {
 		return geom.Vertices.Unpack(res)
