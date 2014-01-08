@@ -15,31 +15,68 @@ import (
 	"github.com/tgascoigne/xdr2obj/resource/frag"
 )
 
+var (
+	SupportedExtensions = []string{".xdr", ".xdd", ".xft"}
+)
+
 func main() {
+	if len(os.Args) == 2 {
+		processModel(os.Args[1])
+		return
+	}
+
+	/* Convert all supported models in directory */
+	files, err := ioutil.ReadDir("./")
+	if err != nil {
+		panic(err)
+	}
+
+	converted := 0
+
+	for _, f := range files {
+		for _, ext := range SupportedExtensions {
+			if strings.Contains(f.Name(), ext) {
+				func() {
+					defer func() {
+						if err := recover(); err != nil {
+							log.Printf("Unable to convert %v\n", f.Name())
+						}
+					}()
+
+					processModel(fmt.Sprintf("./%v", f.Name()))
+					converted++
+				}()
+			}
+		}
+	}
+
+	log.Printf("Converted %v models\n", converted)
+}
+
+func processModel(inFile string) {
+
 	var data []byte
 	var err error
 
 	/* Read the file */
-	in_file := os.Args[1]
-	if data, err = ioutil.ReadFile(in_file); err != nil {
-		log.Fatal(err)
+	if data, err = ioutil.ReadFile(inFile); err != nil {
+		panic(err)
 	}
 
 	/* Unpack the container */
 	res := new(resource.Container)
 	if err = res.Unpack(data); err != nil {
-		log.Fatal(err)
+		panic(err)
 	}
 
 	switch {
-	case filepath.Ext(in_file) == ".xdr":
+	case filepath.Ext(inFile) == ".xdr":
 		exportDrawable(res)
-	case filepath.Ext(in_file) == ".xdd":
+	case filepath.Ext(inFile) == ".xdd":
 		exportDrawableDictionary(res)
-	case filepath.Ext(in_file) == ".xft":
-		exportFragType(res, filepath.Base(in_file))
+	case filepath.Ext(inFile) == ".xft":
+		exportFragType(res, filepath.Base(inFile))
 	}
-
 }
 
 func exportDrawable(res *resource.Container) {
