@@ -36,18 +36,13 @@ func (col *ModelCollection) Unpack(res *resource.Container) error {
 
 	/* Read our model headers */
 	for i, model := range col.Models {
-		if err := col.JumpTo(res, i); err != nil {
-			log.Printf("Error reading model")
-			return err
-		}
-
-		if err := model.Unpack(res); err != nil {
-			log.Printf("Error reading model")
-			return err
-		}
-
-		if err := res.Return(); err != nil {
-			log.Printf("Error reading model")
+		if err := col.Detour(res, i, func() error {
+			if err := model.Unpack(res); err != nil {
+				log.Printf("Error reading model")
+				return err
+			}
+			return nil
+		}); err != nil {
 			return err
 		}
 	}

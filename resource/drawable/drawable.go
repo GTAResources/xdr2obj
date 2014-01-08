@@ -1,10 +1,17 @@
 package drawable
 
 import (
+	"log"
+
 	"github.com/tgascoigne/xdr2obj/resource"
 	"github.com/tgascoigne/xdr2obj/resource/drawable/shader"
 	"github.com/tgascoigne/xdr2obj/resource/types"
 )
+
+type DrawableCollection struct {
+	resource.Collection
+	Drawables []*Drawable
+}
 
 type DrawableHeader struct {
 	_               uint32
@@ -27,6 +34,30 @@ type Drawable struct {
 	Shaders shader.Group
 	Models  ModelCollection
 	Title   string
+}
+
+func (col *DrawableCollection) Unpack(res *resource.Container) error {
+	log.Printf("Reading %v drawables", col.Count)
+
+	col.Drawables = make([]*Drawable, col.Count)
+	for i := range col.Drawables {
+		col.Drawables[i] = new(Drawable)
+	}
+
+	/* Read our model headers */
+	for i, drawable := range col.Drawables {
+		if err := col.Detour(res, i, func() error {
+			if err := drawable.Unpack(res); err != nil {
+				log.Printf("Error reading drawable")
+				return err
+			}
+			return nil
+		}); err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
 func (drawable *Drawable) Unpack(res *resource.Container) error {

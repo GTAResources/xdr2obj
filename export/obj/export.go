@@ -22,7 +22,7 @@ const (
 var materialNames map[int]string
 
 func Export(drawable *drawable.Drawable) error {
-	baseName := drawable.Title[0 : strings.LastIndex(drawable.Title, ".")-1]
+	baseName := drawable.Title[0:strings.LastIndex(drawable.Title, ".")]
 	objFileName := fmt.Sprintf("%v.obj", baseName)
 	mtlFileName := fmt.Sprintf("%v.mtl", baseName)
 	materialNames = make(map[int]string)

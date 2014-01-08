@@ -12,16 +12,34 @@ type Collection struct {
 	Size   uint16
 }
 
+func (col *Collection) Detour(res *Container, i int, callback func() error) error {
+	addr, err := col.GetPtr(res, i)
+	if err != nil {
+		return err
+	}
+
+	return res.Detour(addr, callback)
+}
+
 func (col *Collection) JumpTo(res *Container, i int) error {
-	var start types.Ptr32
-	if err := res.PeekElem(col.Lookup, i, &start); err != nil {
+	addr, err := col.GetPtr(res, i)
+	if err != nil {
+		return err
+	}
+
+	if err = res.Jump(addr); err != nil {
 		log.Printf("Error performing collection lookup")
 		return err
 	}
 
-	if err := res.Jump(start); err != nil {
-		log.Printf("Error performing collection lookup")
-		return err
-	}
 	return nil
+}
+
+func (col *Collection) GetPtr(res *Container, i int) (types.Ptr32, error) {
+	var addr types.Ptr32
+	if err := res.PeekElem(col.Lookup, i, &addr); err != nil {
+		log.Printf("Error performing collection lookup")
+		return 0, err
+	}
+	return addr, nil
 }

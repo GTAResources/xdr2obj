@@ -1,12 +1,16 @@
 package main
 
 import (
+	"fmt"
 	"io/ioutil"
 	"log"
 	"os"
+	"path/filepath"
+	"strings"
 
 	"github.com/tgascoigne/xdr2obj/export/obj"
 	"github.com/tgascoigne/xdr2obj/resource"
+	"github.com/tgascoigne/xdr2obj/resource/dictionary"
 	"github.com/tgascoigne/xdr2obj/resource/drawable"
 )
 
@@ -26,14 +30,45 @@ func main() {
 		log.Fatal(err)
 	}
 
-	/* Unpack the drawable at 0x10 */
+	switch {
+	case filepath.Ext(in_file) == ".xdr":
+		exportDrawable(res)
+	case filepath.Ext(in_file) == ".xdd":
+		exportDrawableDictionary(res)
+	}
+
+}
+
+func exportDrawable(res *resource.Container) {
+	/* Unpack the drawable */
 	drawable := new(drawable.Drawable)
-	if err = drawable.Unpack(res); err != nil {
+	if err := drawable.Unpack(res); err != nil {
 		log.Fatal(err)
 	}
 
 	/* Export it */
-	if err = obj.Export(drawable); err != nil {
+	if err := obj.Export(drawable); err != nil {
 		log.Fatal(err)
+	}
+}
+
+func exportDrawableDictionary(res *resource.Container) {
+	/* Unpack the dictionary */
+	dictionary := new(dictionary.Dictionary)
+	if err := dictionary.Unpack(res); err != nil {
+		log.Fatal(err)
+	}
+
+	/* Fix up the file names */
+	for i, drawable := range dictionary.Drawables {
+		drawable.Title = strings.Replace(drawable.Title, ".#dd", fmt.Sprintf("_%v.#dd", i), -1)
+		log.Print(drawable.Title)
+	}
+
+	/* Export it */
+	for _, drawable := range dictionary.Drawables {
+		if err := obj.Export(drawable); err != nil {
+			log.Printf(err.Error())
+		}
 	}
 }
