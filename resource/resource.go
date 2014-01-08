@@ -13,7 +13,7 @@ import (
 const (
 	resMagic  = 0x52534337
 	baseSize  = 0x2000
-	stringMax = 32
+	stringMax = 64
 )
 
 var ErrInvalidResource error = errors.New("invalid resource")
@@ -72,15 +72,19 @@ func (res *Container) Parse(data interface{}) {
 				break
 			}
 		}
+		if err != nil {
+			panic(err)
+		}
+
 		str := data.(*string)
 		copy(buf, res.Data[res.position:res.position+i])
 		*str = string(buf[:i])
 		res.position += i
 	default:
 		err = binary.Read(res, binary.BigEndian, data)
-	}
-	if err != nil {
-		panic(err)
+		if err != nil {
+			panic(err)
+		}
 	}
 }
 
