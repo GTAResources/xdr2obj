@@ -32,7 +32,12 @@ func (vert *Vertex) Unpack(res *resource.Container, buf *VertexBuffer) error {
 		}
 	}
 
-	if buf.Format.HasUV0() {
+	if buf.Format.HasUV1() {
+		reader.Seek(0x20, 0)
+		if err := binary.Read(reader, binary.BigEndian, &vert.UV); err != nil {
+			return err
+		}
+	} else if buf.Format.HasUV0() {
 		reader.Seek(0x14, 0)
 		if err := binary.Read(reader, binary.BigEndian, &vert.UV); err != nil {
 			return err
@@ -46,7 +51,8 @@ type VertexFormat uint32
 
 const (
 	FmtHasXYZ = (1 << 0)
-	FmtHasUV0 = (1 << 4) /* I suspect there's probably multitexturing support */
+	FmtHasUV0 = (1 << 4)
+	FmtHasUV1 = (1 << 5)
 )
 
 func (f VertexFormat) HasXYZ() bool {
@@ -54,9 +60,13 @@ func (f VertexFormat) HasXYZ() bool {
 }
 
 func (f VertexFormat) HasUV0() bool {
-	return (uint32(f) & FmtHasXYZ) != 0
+	return (uint32(f) & FmtHasUV0) != 0
+}
+
+func (f VertexFormat) HasUV1() bool {
+	return (uint32(f) & FmtHasUV1) != 0
 }
 
 func (f VertexFormat) String() string {
-	return fmt.Sprintf("0x%x XYZ: %v UV0: %v", uint32(f), f.HasXYZ(), f.HasUV0())
+	return fmt.Sprintf("0x%x XYZ: %v, UV0: %v, UV1: %v", uint32(f), f.HasXYZ(), f.HasUV0(), f.HasUV1())
 }

@@ -54,7 +54,6 @@ func main() {
 }
 
 func processModel(inFile string) {
-
 	var data []byte
 	var err error
 
