@@ -12,6 +12,7 @@ import (
 	"github.com/tgascoigne/xdr2obj/resource"
 	"github.com/tgascoigne/xdr2obj/resource/dictionary"
 	"github.com/tgascoigne/xdr2obj/resource/drawable"
+	"github.com/tgascoigne/xdr2obj/resource/frag"
 )
 
 func main() {
@@ -35,6 +36,8 @@ func main() {
 		exportDrawable(res)
 	case filepath.Ext(in_file) == ".xdd":
 		exportDrawableDictionary(res)
+	case filepath.Ext(in_file) == ".xft":
+		exportFragType(res, filepath.Base(in_file))
 	}
 
 }
@@ -70,5 +73,21 @@ func exportDrawableDictionary(res *resource.Container) {
 		if err := obj.Export(drawable); err != nil {
 			log.Printf(err.Error())
 		}
+	}
+}
+
+func exportFragType(res *resource.Container, title string) {
+	/* Unpack the frag type */
+	frag := new(frag.FragType)
+	if err := frag.Unpack(res); err != nil {
+		log.Fatal(err)
+	}
+
+	/* Drawables inside frag files dont seem to be named properly. */
+	frag.Drawable.Title = title
+
+	/* Export it */
+	if err := obj.Export(&frag.Drawable); err != nil {
+		log.Fatal(err)
 	}
 }

@@ -1,12 +1,15 @@
 package drawable
 
 import (
+	"fmt"
 	"log"
 
 	"github.com/tgascoigne/xdr2obj/resource"
 	"github.com/tgascoigne/xdr2obj/resource/drawable/shader"
 	"github.com/tgascoigne/xdr2obj/resource/types"
 )
+
+var NextUnnamedIndex int = 0
 
 type DrawableCollection struct {
 	resource.Collection
@@ -77,12 +80,19 @@ func (drawable *Drawable) Unpack(res *resource.Container) error {
 		return err
 	}
 
-	if err := res.Detour(drawable.Header.Title, func() error {
-		res.Parse(&drawable.Title)
-		return nil
-	}); err != nil {
-		return err
+	if drawable.Header.Title.Valid() {
+		if err := res.Detour(drawable.Header.Title, func() error {
+			res.Parse(&drawable.Title)
+			return nil
+		}); err != nil {
+			return err
+		}
+	} else {
+		drawable.Title = fmt.Sprintf("unnamed_%v.#dd", NextUnnamedIndex)
+		NextUnnamedIndex++
 	}
+
+	log.Printf("Drawable: %v\n", drawable.Title)
 
 	return nil
 }
