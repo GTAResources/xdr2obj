@@ -82,7 +82,8 @@ func (res *Container) Parse(data interface{}) {
 		res.position += i
 	default:
 		err = binary.Read(res, binary.BigEndian, data)
-		if err != nil {
+
+		if err != nil && err != io.EOF {
 			panic(err)
 		}
 	}
