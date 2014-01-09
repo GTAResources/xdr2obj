@@ -39,17 +39,19 @@ func (shader *Shader) Unpack(res *resource.Container) error {
 				return err
 			}
 
-			var err error
-			switch param.Type {
-			case ParamDiffuseBitmap:
-				shader.DiffusePath, err = param.parameter.(*BitmapParameter).Get(res)
-			case ParamNormalBitmap:
-				shader.NormalPath, err = param.parameter.(*BitmapParameter).Get(res)
+			if param.parameter != nil {
+				var err error
+				switch param.Type {
+				case ParamDiffuseBitmap:
+					shader.DiffusePath, err = param.parameter.(*BitmapParameter).Get(res)
+				case ParamNormalBitmap:
+					shader.NormalPath, err = param.parameter.(*BitmapParameter).Get(res)
+				}
+				if err != nil {
+					return err
+				}
 			}
 
-			if err != nil {
-				return err
-			}
 		}
 		return nil
 	}); err != nil {

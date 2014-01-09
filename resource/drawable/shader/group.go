@@ -30,18 +30,13 @@ func (group *Group) Unpack(res *resource.Container) error {
 	}
 
 	for i, shader := range group.Shaders {
-		if err := group.JumpTo(res, i); err != nil {
-			log.Printf("Error reading shader")
-			return err
-		}
-
-		if err := shader.Unpack(res); err != nil {
-			log.Printf("Error reading shader")
-			return err
-		}
-
-		if err := res.Return(); err != nil {
-			log.Printf("Error reading shader")
+		if err := group.Detour(res, i, func() error {
+			if err := shader.Unpack(res); err != nil {
+				return err
+			}
+			return nil
+		}); err != nil {
+			log.Printf("Error reading shader %v\n", i)
 			return err
 		}
 	}

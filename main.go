@@ -35,7 +35,16 @@ func main() {
 
 	if flag.NArg() > 0 {
 		for _, s := range flag.Args() {
-			processModel(s)
+			func() {
+				defer func() {
+					if err := recover(); err != nil {
+						log.Printf("Unable to convert %v\n", s)
+					}
+				}()
+
+				processModel(s)
+				converted++
+			}()
 		}
 		return
 	}

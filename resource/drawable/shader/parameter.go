@@ -23,6 +23,10 @@ const (
 func (param *Parameter) Unpack(res *resource.Container) error {
 	res.Parse(&param.ParameterHeader)
 
+	if !param.Offset.Valid() {
+		return nil
+	}
+
 	switch param.Type {
 	case ParamDiffuseBitmap, ParamNormalBitmap:
 		bitmap := new(BitmapParameter)
