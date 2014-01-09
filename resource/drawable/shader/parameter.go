@@ -66,6 +66,10 @@ type BitmapParameter struct {
 }
 
 func (bmp *BitmapParameter) Get(res *resource.Container) (string, error) {
+	if !bmp.Path.Valid() {
+		return "", nil
+	}
+
 	var path string
 	if err := res.Detour(bmp.Path, func() error {
 		res.Parse(&path)

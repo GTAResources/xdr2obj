@@ -39,6 +39,7 @@ func main() {
 				defer func() {
 					if err := recover(); err != nil {
 						log.Printf("Unable to convert %v\n", s)
+						panic(err)
 					}
 				}()
 
@@ -62,6 +63,7 @@ func main() {
 					defer func() {
 						if err := recover(); err != nil {
 							log.Printf("Unable to convert %v\n", f.Name())
+							panic(err)
 						}
 					}()
 

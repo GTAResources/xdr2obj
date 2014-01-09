@@ -13,7 +13,7 @@ import (
 const (
 	resMagic  = 0x52534337
 	baseSize  = 0x2000
-	stringMax = 64
+	stringMax = 256
 )
 
 var ErrInvalidResource error = errors.New("invalid resource")
