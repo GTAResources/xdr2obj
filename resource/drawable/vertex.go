@@ -32,8 +32,13 @@ func (vert *Vertex) Unpack(res *resource.Container, buf *VertexBuffer) error {
 		}
 	}
 
-	if buf.Format.HasUV1() {
+	if buf.Format.HasUV2() {
 		reader.Seek(0x20, 0)
+		if err := binary.Read(reader, binary.BigEndian, &vert.UV); err != nil {
+			return err
+		}
+	} else if buf.Format.HasUV1() {
+		reader.Seek(0x1C, 0)
 		if err := binary.Read(reader, binary.BigEndian, &vert.UV); err != nil {
 			return err
 		}
@@ -52,7 +57,8 @@ type VertexFormat uint32
 const (
 	FmtHasXYZ = (1 << 0)
 	FmtHasUV0 = (1 << 4)
-	FmtHasUV1 = (1 << 5)
+	FmtHasUV1 = (1 << 1) /* this might be << 2 */
+	FmtHasUV2 = (1 << 5)
 )
 
 func (f VertexFormat) HasXYZ() bool {
@@ -67,6 +73,10 @@ func (f VertexFormat) HasUV1() bool {
 	return (uint32(f) & FmtHasUV1) != 0
 }
 
+func (f VertexFormat) HasUV2() bool {
+	return (uint32(f) & FmtHasUV2) != 0
+}
+
 func (f VertexFormat) String() string {
-	return fmt.Sprintf("0x%x XYZ: %v, UV0: %v, UV1: %v", uint32(f), f.HasXYZ(), f.HasUV0(), f.HasUV1())
+	return fmt.Sprintf("0x%x", uint32(f)) /* todo: better representation. */
 }

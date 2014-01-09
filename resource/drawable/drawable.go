@@ -92,7 +92,5 @@ func (drawable *Drawable) Unpack(res *resource.Container) error {
 		NextUnnamedIndex++
 	}
 
-	log.Printf("Drawable: %v\n", drawable.Title)
-
 	return nil
 }
