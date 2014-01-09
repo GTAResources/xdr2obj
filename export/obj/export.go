@@ -3,7 +3,6 @@ package obj
 import (
 	"errors"
 	"fmt"
-	"log"
 	"os"
 	"strings"
 
@@ -20,6 +19,32 @@ const (
 )
 
 var materialNames map[int]string
+var mergeObjFile, mergeMtlFile *os.File
+
+func OpenMergeFile(baseName string) error {
+	var objFile, mtlFile *os.File
+	var err error
+	if objFile, err = os.Create(fmt.Sprintf("%v.obj", baseName)); err != nil {
+		return err
+	}
+
+	if mtlFile, err = os.Create(fmt.Sprintf("%v.mtl", baseName)); err != nil {
+		return err
+	}
+
+	mergeObjFile = objFile
+	mergeMtlFile = mtlFile
+	return nil
+}
+
+func CloseMergeFile() {
+	if mergeObjFile != nil {
+		mergeObjFile.Close()
+	}
+	if mergeMtlFile != nil {
+		mergeMtlFile.Close()
+	}
+}
 
 func Export(drawable *drawable.Drawable) error {
 	baseName := drawable.Title[0:strings.LastIndex(drawable.Title, ".")]
@@ -29,14 +54,19 @@ func Export(drawable *drawable.Drawable) error {
 
 	var objFile, mtlFile *os.File
 	var err error
-	if objFile, err = os.Create(objFileName); err != nil {
-		return err
+	if mergeObjFile != nil && mergeMtlFile != nil {
+		objFile = mergeObjFile
+		mtlFile = mergeMtlFile
+	} else {
+		if objFile, err = os.Create(objFileName); err != nil {
+			return err
+		}
+		defer objFile.Close()
+		if mtlFile, err = os.Create(mtlFileName); err != nil {
+			return err
+		}
+		defer mtlFile.Close()
 	}
-	defer objFile.Close()
-	if mtlFile, err = os.Create(mtlFileName); err != nil {
-		return err
-	}
-	defer mtlFile.Close()
 
 	for i, shader := range drawable.Shaders.Shaders {
 		materialNames[i] = fmt.Sprintf("%v_%v", baseName, i)
@@ -54,8 +84,6 @@ func Export(drawable *drawable.Drawable) error {
 		}
 	}
 
-	log.Printf("Wrote %v", objFileName)
-	log.Printf("Wrote %v", mtlFileName)
 	return nil
 }
 
@@ -105,8 +133,11 @@ func exportGeometry(geom *drawable.Geometry, file *os.File, name string, idxBase
 		}
 	}
 
+	numVerts := len(geom.Vertices.Vertex)
+
 	for _, tri := range geom.Indices.Index {
-		a, b, c := idxBase+tri.A, idxBase+tri.B, idxBase+tri.C
+		//		a, b, c := idxBase+tri.A, idxBase+tri.B, idxBase+tri.C
+		a, b, c := -int(numVerts-int(tri.A)), -int(numVerts-int(tri.B)), -int(numVerts-int(tri.C))
 		if geom.Vertices.Format.HasUV0() {
 			fmt.Fprintf(file, "f %v/%v %v/%v %v/%v\n", a, a, b, b, c, c)
 		} else {

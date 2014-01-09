@@ -1,10 +1,10 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"io/ioutil"
 	"log"
-	"os"
 	"path/filepath"
 	"strings"
 
@@ -20,8 +20,23 @@ var (
 )
 
 func main() {
-	if len(os.Args) == 2 {
-		processModel(os.Args[1])
+	var mergeFile = flag.String("merge", "", "The basename of a file to merge all output to")
+	flag.Parse()
+
+	if *mergeFile != "" {
+		obj.OpenMergeFile(*mergeFile)
+		defer obj.CloseMergeFile()
+	}
+
+	converted := 0
+	defer func() {
+		log.Printf("Converted %v models\n", converted)
+	}()
+
+	if flag.NArg() > 0 {
+		for _, s := range flag.Args() {
+			processModel(s)
+		}
 		return
 	}
 
@@ -30,8 +45,6 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-
-	converted := 0
 
 	for _, f := range files {
 		for _, ext := range SupportedExtensions {
@@ -50,7 +63,6 @@ func main() {
 		}
 	}
 
-	log.Printf("Converted %v models\n", converted)
 }
 
 func processModel(inFile string) {
@@ -101,7 +113,6 @@ func exportDrawableDictionary(res *resource.Container) {
 	/* Fix up the file names */
 	for i, drawable := range dictionary.Drawables {
 		drawable.Title = strings.Replace(drawable.Title, ".#dd", fmt.Sprintf("_%v.#dd", i), -1)
-		log.Print(drawable.Title)
 	}
 
 	/* Export it */
