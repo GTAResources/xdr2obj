@@ -3,6 +3,7 @@ package drawable
 import (
 	"bytes"
 	"encoding/binary"
+	"errors"
 	"fmt"
 
 	"github.com/tgascoigne/xdr2obj/resource"
@@ -25,26 +26,16 @@ func (vert *Vertex) Unpack(res *resource.Container, buf *VertexBuffer) error {
 	}
 
 	/* Parse out the info we can */
-	if buf.Format.HasXYZ() {
-		reader.Seek(0, 0)
-		if err := binary.Read(reader, binary.BigEndian, &vert.WorldCoord); err != nil {
+	if ofs, err := buf.Format.OffsetOf(VertXYZ); err == nil {
+		reader.Seek(int64(ofs), 0)
+		if err = binary.Read(reader, binary.BigEndian, &vert.WorldCoord); err != nil {
 			return err
 		}
 	}
 
-	if buf.Format.HasUV2() {
-		reader.Seek(0x20, 0)
-		if err := binary.Read(reader, binary.BigEndian, &vert.UV); err != nil {
-			return err
-		}
-	} else if buf.Format.HasUV1() {
-		reader.Seek(0x1C, 0)
-		if err := binary.Read(reader, binary.BigEndian, &vert.UV); err != nil {
-			return err
-		}
-	} else if buf.Format.HasUV0() {
-		reader.Seek(0x14, 0)
-		if err := binary.Read(reader, binary.BigEndian, &vert.UV); err != nil {
+	if ofs, err := buf.Format.OffsetOf(VertUV); err == nil {
+		reader.Seek(int64(ofs), 0)
+		if err = binary.Read(reader, binary.BigEndian, &vert.UV); err != nil {
 			return err
 		}
 	}
@@ -55,28 +46,48 @@ func (vert *Vertex) Unpack(res *resource.Container, buf *VertexBuffer) error {
 type VertexFormat uint32
 
 const (
-	FmtHasXYZ = (1 << 0)
-	FmtHasUV0 = (1 << 4)
-	FmtHasUV1 = (1 << 1) /* this might be << 2 */
-	FmtHasUV2 = (1 << 5)
+	VertXYZ   = (1 << 0) /* + 4*3 */
+	VertUnkA  = (1 << 1) /* + 4 */
+	VertUnkB  = (1 << 2) /* + 4 */
+	VertUnkC  = (1 << 3) /* + 4 */
+	VertColor = (1 << 4) /* + 4 */
+	VertUnkD  = (1 << 5) /* + 8 */
+	VertUV    = (1 << 6) /* + 4 */
+
 )
 
-func (f VertexFormat) HasXYZ() bool {
-	return (uint32(f) & FmtHasXYZ) != 0
+var (
+	elementSizes = map[int]int{
+		VertXYZ:   4 * 3,
+		VertUnkA:  4,
+		VertUnkB:  4,
+		VertUnkC:  4,
+		VertColor: 4,
+		VertUnkD:  8,
+		VertUV:    4,
+	}
+	ErrUnsupported error = errors.New("unsupported bit")
+)
+
+func (f VertexFormat) Supports(field int) bool {
+	return (int(f) & field) != 0
 }
 
-func (f VertexFormat) HasUV0() bool {
-	return (uint32(f) & FmtHasUV0) != 0
-}
+func (f VertexFormat) OffsetOf(field int) (int, error) {
+	if !f.Supports(field) {
+		return 0, ErrUnsupported
+	}
 
-func (f VertexFormat) HasUV1() bool {
-	return (uint32(f) & FmtHasUV1) != 0
-}
+	size := 0
+	for i := 1; i < field; i <<= 1 {
+		if f.Supports(i) {
+			size += elementSizes[i]
+		}
+	}
 
-func (f VertexFormat) HasUV2() bool {
-	return (uint32(f) & FmtHasUV2) != 0
+	return size, nil
 }
 
 func (f VertexFormat) String() string {
-	return fmt.Sprintf("0x%x", uint32(f)) /* todo: better representation. */
+	return fmt.Sprintf("0x%x", int(f)) /* todo: better representation. */
 }

@@ -115,7 +115,7 @@ func exportModel(model *drawable.Model, file *os.File, name string) error {
 
 // idxBase is added to each index specified. Used for grouping geometry properly
 func exportGeometry(geom *drawable.Geometry, file *os.File, name string, idxBase uint16) error {
-	if !geom.Vertices.Format.HasXYZ() {
+	if !geom.Vertices.Format.Supports(drawable.VertXYZ) {
 		return ErrUnsupportedVertexFormat
 	}
 
@@ -124,9 +124,8 @@ func exportGeometry(geom *drawable.Geometry, file *os.File, name string, idxBase
 	}
 
 	for _, vert := range geom.Vertices.Vertex {
-		/* todo: Do we need the W here? Is it even a W coord? */
 		fmt.Fprintf(file, "v %v %v %v\n", vert.X, vert.Y, vert.Z)
-		if geom.Vertices.Format.HasUV0() {
+		if geom.Vertices.Format.Supports(drawable.VertUV) {
 			u := vert.U.Value()
 			v := (-vert.V.Value()) + 1
 			fmt.Fprintf(file, "vt %v %v\n", u, v)
@@ -136,9 +135,8 @@ func exportGeometry(geom *drawable.Geometry, file *os.File, name string, idxBase
 	numVerts := len(geom.Vertices.Vertex)
 
 	for _, tri := range geom.Indices.Index {
-		//		a, b, c := idxBase+tri.A, idxBase+tri.B, idxBase+tri.C
 		a, b, c := -int(numVerts-int(tri.A)), -int(numVerts-int(tri.B)), -int(numVerts-int(tri.C))
-		if geom.Vertices.Format.HasUV0() {
+		if geom.Vertices.Format.Supports(drawable.VertUV) {
 			fmt.Fprintf(file, "f %v/%v %v/%v %v/%v\n", a, a, b, b, c, c)
 		} else {
 			fmt.Fprintf(file, "f %v %v %v\n", a, b, c)

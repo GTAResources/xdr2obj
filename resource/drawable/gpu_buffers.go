@@ -53,6 +53,7 @@ func (buf *VertexBuffer) Unpack(res *resource.Container) error {
 	}
 
 	if err := res.Detour(buf.Buffer, func() error {
+		log.Printf("%x\n", res.Tell())
 		for _, vert := range buf.Vertex {
 			if err := vert.Unpack(res, buf); err != nil {
 				return err
