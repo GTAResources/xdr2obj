@@ -68,6 +68,8 @@ func Export(drawable *drawable.Drawable) error {
 		defer mtlFile.Close()
 	}
 
+	fmt.Fprintf(objFile, "mtllib %v\n", mtlFileName)
+
 	for i, shader := range drawable.Shaders.Shaders {
 		materialNames[i] = fmt.Sprintf("%v_%v", baseName, i)
 		fmt.Fprintf(mtlFile, "newmtl %v\n", materialNames[i])
