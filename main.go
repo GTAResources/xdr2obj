@@ -23,6 +23,8 @@ func main() {
 	var mergeFile = flag.String("merge", "", "The basename of a file to merge all output to")
 	flag.Parse()
 
+	log.SetFlags(0)
+
 	if *mergeFile != "" {
 		obj.OpenMergeFile(*mergeFile)
 		defer obj.CloseMergeFile()
@@ -42,8 +44,9 @@ func main() {
 						panic(err)
 					}
 				}()
-
+				log.Printf("Converting %v..\n", s)
 				processModel(s)
+				log.Printf("done\n")
 				converted++
 			}()
 		}
@@ -66,8 +69,10 @@ func main() {
 							panic(err)
 						}
 					}()
-
-					processModel(fmt.Sprintf("./%v", f.Name()))
+					filePath := fmt.Sprintf("./%v", f.Name())
+					log.Printf("Converting %v..\n", filePath)
+					processModel(filePath)
+					log.Printf("done\n")
 					converted++
 				}()
 			}

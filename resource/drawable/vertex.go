@@ -53,7 +53,6 @@ const (
 	VertColor = (1 << 4) /* + 4 */
 	VertUnkD  = (1 << 5) /* + 8 */
 	VertUV    = (1 << 6) /* + 4 */
-
 )
 
 var (

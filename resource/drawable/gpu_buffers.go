@@ -3,7 +3,6 @@ package drawable
 import (
 	"bytes"
 	"encoding/binary"
-	"log"
 
 	"github.com/tgascoigne/xdr2obj/resource"
 	"github.com/tgascoigne/xdr2obj/resource/types"
@@ -44,8 +43,6 @@ func (buf *VertexBuffer) Unpack(res *resource.Container) error {
 	}); err != nil {
 		return err
 	}
-
-	log.Printf("Vert stride: %v format: %v", buf.Stride, buf.Format)
 
 	buf.Vertex = make([]*Vertex, buf.Count)
 	for i := range buf.Vertex {

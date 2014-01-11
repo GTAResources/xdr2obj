@@ -40,8 +40,6 @@ type Drawable struct {
 }
 
 func (col *DrawableCollection) Unpack(res *resource.Container) error {
-	log.Printf("Reading %v drawables", col.Count)
-
 	col.Drawables = make([]*Drawable, col.Count)
 	for i := range col.Drawables {
 		col.Drawables[i] = new(Drawable)

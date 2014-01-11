@@ -21,8 +21,6 @@ type Group struct {
 func (group *Group) Unpack(res *resource.Container) error {
 	res.Parse(&group.GroupHeader)
 
-	log.Printf("Reading %v shaders", group.Count)
-
 	/* Read our shader headers */
 	group.Shaders = make([]*Shader, group.Count)
 	for i := range group.Shaders {

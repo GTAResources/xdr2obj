@@ -27,8 +27,6 @@ type Model struct {
 func (col *ModelCollection) Unpack(res *resource.Container) error {
 	res.Parse(&col.Collection)
 
-	log.Printf("Reading %v models", col.Count)
-
 	col.Models = make([]*Model, col.Count)
 	for i := range col.Models {
 		col.Models[i] = new(Model)
@@ -54,8 +52,6 @@ func (model *Model) Unpack(res *resource.Container) error {
 	res.Parse(&model.Header)
 
 	col := &model.Header.GeometryCollection
-
-	log.Printf("Reading %v geometries", col.Count)
 
 	model.Geometry = make([]*Geometry, col.Count)
 	for i := range model.Geometry {

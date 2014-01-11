@@ -268,16 +268,25 @@ vec4
 Vertex Format Flags
 ------------------
 
-This is a bitfield identifying the format of vertices in a vertex buffer.
-These haven't been fully verified/decoded yet. This is a WIP.
+This flag specifies which fields are active in the vertex buffer.
+This can be used to calculate the offset of any field in the
+vertex buffer, provided you know the size of each field before it.
+(See resource/drawable/vertex.go)
 
 Fields:
-|----------------+------------|
-| Position (RTL) | Flag       |
-|----------------+------------|
-|              0 | XYZ Coords |
-|              4 | UV Coords  |
-|----------------+------------|
+|----------------+-------+-------|
+| Position (RTL) | Flag  | Size  |
+|----------------+-------+-------|
+|              0 | XYZ   | 4 * 3 |
+|              1 |       | 4     |
+|              2 |       | 4     |
+|              3 |       | 4     |
+|              4 | Color | 4     |
+|              5 |       | 8     |
+|              6 | UV    | 4     |
+|              7 |       |       |
+|              8 |       |       |
+|----------------+-------+-------|
 
 Examples:
 |--------+--------+-----------------|
@@ -291,6 +300,3 @@ Examples:
 |     28 | 0x4059 | 100000001011001 |
 |     24 | 0x0059 | 000000001011001 |
 |--------+--------+-----------------|
-
-    #define FLG_XYZ (1 << 0)
-    #define FLG_UV (1 << 4)
