@@ -19,9 +19,9 @@ const (
 )
 
 var materialNames map[int]string
-var mergeObjFile, mergeMtlFile *os.File
+var destObjFile, destMtlFile *os.File
 
-func OpenMergeFile(baseName string) error {
+func OpenDestFile(baseName string) error {
 	var objFile, mtlFile *os.File
 	var err error
 	if objFile, err = os.Create(fmt.Sprintf("%v.obj", baseName)); err != nil {
@@ -32,17 +32,17 @@ func OpenMergeFile(baseName string) error {
 		return err
 	}
 
-	mergeObjFile = objFile
-	mergeMtlFile = mtlFile
+	destObjFile = objFile
+	destMtlFile = mtlFile
 	return nil
 }
 
-func CloseMergeFile() {
-	if mergeObjFile != nil {
-		mergeObjFile.Close()
+func CloseDestFile() {
+	if destObjFile != nil {
+		destObjFile.Close()
 	}
-	if mergeMtlFile != nil {
-		mergeMtlFile.Close()
+	if destMtlFile != nil {
+		destMtlFile.Close()
 	}
 }
 
@@ -54,9 +54,9 @@ func Export(drawable *drawable.Drawable) error {
 
 	var objFile, mtlFile *os.File
 	var err error
-	if mergeObjFile != nil && mergeMtlFile != nil {
-		objFile = mergeObjFile
-		mtlFile = mergeMtlFile
+	if destObjFile != nil && destMtlFile != nil {
+		objFile = destObjFile
+		mtlFile = destMtlFile
 	} else {
 		if objFile, err = os.Create(objFileName); err != nil {
 			return err
@@ -102,21 +102,16 @@ func exportMaterial(material *shader.Shader, file *os.File) error {
 }
 
 func exportModel(model *drawable.Model, file *os.File, name string) error {
-	indexBase := uint16(1)
-
 	for i, geom := range model.Geometry {
 		fmt.Fprintf(file, "g %v_%v\n", name, i)
-		if err := exportGeometry(geom, file, name, indexBase); err != nil {
+		if err := exportGeometry(geom, file, name); err != nil {
 			return err
 		}
-
-		indexBase += geom.VertexCount
 	}
 	return nil
 }
 
-// idxBase is added to each index specified. Used for grouping geometry properly
-func exportGeometry(geom *drawable.Geometry, file *os.File, name string, idxBase uint16) error {
+func exportGeometry(geom *drawable.Geometry, file *os.File, name string) error {
 	if !geom.Vertices.Format.Supports(drawable.VertXYZ) {
 		return ErrUnsupportedVertexFormat
 	}

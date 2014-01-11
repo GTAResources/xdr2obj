@@ -3,7 +3,6 @@ package drawable
 import (
 	"bytes"
 	"encoding/binary"
-	"errors"
 	"fmt"
 
 	"github.com/tgascoigne/xdr2obj/resource"
@@ -26,16 +25,39 @@ func (vert *Vertex) Unpack(res *resource.Container, buf *VertexBuffer) error {
 	}
 
 	/* Parse out the info we can */
-	if ofs, err := buf.Format.OffsetOf(VertXYZ); err == nil {
-		reader.Seek(int64(ofs), 0)
-		if err = binary.Read(reader, binary.BigEndian, &vert.WorldCoord); err != nil {
+	if buf.Format.Supports(VertXYZ) {
+		if err := binary.Read(reader, binary.BigEndian, &vert.WorldCoord); err != nil {
 			return err
 		}
 	}
 
-	if ofs, err := buf.Format.OffsetOf(VertUV); err == nil {
-		reader.Seek(int64(ofs), 0)
-		if err = binary.Read(reader, binary.BigEndian, &vert.UV); err != nil {
+	if buf.Format.Supports(VertUnkA) {
+		junk := make([]byte, 4)
+		reader.Read(junk)
+	}
+
+	if buf.Format.Supports(VertUnkB) {
+		junk := make([]byte, 4)
+		reader.Read(junk)
+	}
+
+	if buf.Format.Supports(VertUnkC) {
+		junk := make([]byte, 4)
+		reader.Read(junk)
+	}
+
+	if buf.Format.Supports(VertColor) {
+		junk := make([]byte, 4)
+		reader.Read(junk)
+	}
+
+	if buf.Format.Supports(VertUnkD) {
+		junk := make([]byte, 8)
+		reader.Read(junk)
+	}
+
+	if buf.Format.Supports(VertUV) {
+		if err := binary.Read(reader, binary.BigEndian, &vert.UV); err != nil {
 			return err
 		}
 	}
@@ -55,36 +77,8 @@ const (
 	VertUV    = (1 << 6) /* + 4 */
 )
 
-var (
-	elementSizes = map[int]int{
-		VertXYZ:   4 * 3,
-		VertUnkA:  4,
-		VertUnkB:  4,
-		VertUnkC:  4,
-		VertColor: 4,
-		VertUnkD:  8,
-		VertUV:    4,
-	}
-	ErrUnsupported error = errors.New("unsupported bit")
-)
-
 func (f VertexFormat) Supports(field int) bool {
 	return (int(f) & field) != 0
-}
-
-func (f VertexFormat) OffsetOf(field int) (int, error) {
-	if !f.Supports(field) {
-		return 0, ErrUnsupported
-	}
-
-	size := 0
-	for i := 1; i < field; i <<= 1 {
-		if f.Supports(i) {
-			size += elementSizes[i]
-		}
-	}
-
-	return size, nil
 }
 
 func (f VertexFormat) String() string {

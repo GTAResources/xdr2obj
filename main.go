@@ -26,8 +26,8 @@ func main() {
 	log.SetFlags(0)
 
 	if *mergeFile != "" {
-		obj.OpenMergeFile(*mergeFile)
-		defer obj.CloseMergeFile()
+		obj.OpenDestFile(*mergeFile)
+		defer obj.CloseDestFile()
 	}
 
 	converted := 0
