@@ -6,6 +6,14 @@ reading from a container such as RPF7, you need to ensure that the partition
 offsets are calculated correctly and applied to each address as specified in
 the ptr32 section.
 
+Credits
+------------------
+
+This documentation is based off of work started by Reoze and Interdpth on
+GTAForums.com, and the WDR specification at gtamodding.com. It is brought
+together here with my own work to provide a complete and clean description
+of the file format for the public.
+
 System Partition
 ==================
 
