@@ -122,7 +122,7 @@ func exportGeometry(geom *drawable.Geometry, file *os.File, name string) error {
 
 	for _, vert := range geom.Vertices.Vertex {
 		fmt.Fprintf(file, "v %v %v %v\n", vert.X, vert.Y, vert.Z)
-		if geom.Vertices.Format.Supports(drawable.VertUV) {
+		if geom.Vertices.Format.Supports(drawable.VertUV0) {
 			u := vert.U.Value()
 			v := (-vert.V.Value()) + 1
 			fmt.Fprintf(file, "vt %v %v\n", u, v)
@@ -133,7 +133,7 @@ func exportGeometry(geom *drawable.Geometry, file *os.File, name string) error {
 
 	for _, tri := range geom.Indices.Index {
 		a, b, c := -int(numVerts-int(tri.A)), -int(numVerts-int(tri.B)), -int(numVerts-int(tri.C))
-		if geom.Vertices.Format.Supports(drawable.VertUV) {
+		if geom.Vertices.Format.Supports(drawable.VertUV0) {
 			fmt.Fprintf(file, "f %v/%v %v/%v %v/%v\n", a, a, b, b, c, c)
 		} else {
 			fmt.Fprintf(file, "f %v %v %v\n", a, b, c)
