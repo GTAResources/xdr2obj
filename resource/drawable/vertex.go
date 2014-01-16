@@ -100,7 +100,7 @@ const (
 	VertUnkD  = (1 << 5)  /* + 4 */
 	VertUV0   = (1 << 6)  /* + 4 */
 	VertUV1   = (1 << 7)  /* + 4 */
-	VertUnkX  = (1 << 15) /* + 4 */
+	VertUnkX  = (1 << 14) /* + 4 */
 )
 
 func (f VertexFormat) Supports(field int) bool {
