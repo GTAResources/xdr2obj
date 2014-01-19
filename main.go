@@ -10,13 +10,14 @@ import (
 
 	"github.com/tgascoigne/xdr2obj/export/obj"
 	"github.com/tgascoigne/xdr2obj/resource"
+	"github.com/tgascoigne/xdr2obj/resource/bounds"
 	"github.com/tgascoigne/xdr2obj/resource/dictionary"
 	"github.com/tgascoigne/xdr2obj/resource/drawable"
 	"github.com/tgascoigne/xdr2obj/resource/frag"
 )
 
 var (
-	SupportedExtensions = []string{".xdr", ".xdd", ".xft"}
+	SupportedExtensions = []string{".xdr", ".xdd", ".xft", ".xbn"}
 )
 
 func main() {
@@ -103,6 +104,8 @@ func processModel(inFile string) {
 		exportDrawableDictionary(res)
 	case filepath.Ext(inFile) == ".xft":
 		exportFragType(res, filepath.Base(inFile))
+	case filepath.Ext(inFile) == ".xbn":
+		exportBoundsNodes(res)
 	}
 }
 
@@ -153,4 +156,19 @@ func exportFragType(res *resource.Container, title string) {
 	if err := obj.Export(&frag.Drawable); err != nil {
 		log.Fatal(err)
 	}
+}
+
+func exportBoundsNodes(res *resource.Container) {
+	/* Unpack the nodes */
+	nodes := new(bounds.Nodes)
+	if err := nodes.Unpack(res); err != nil {
+		log.Fatal(err)
+	}
+
+	/* Export it */
+	/*	for _, drawable := range nodes.Drawables {
+		if err := obj.Export(drawable); err != nil {
+			log.Printf(err.Error())
+		}
+	}*/
 }
