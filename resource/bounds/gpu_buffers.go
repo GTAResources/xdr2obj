@@ -17,7 +17,6 @@ func (v Vertices) Unpack(res *resource.Container) error {
 	for i := 0; i < cap(v); i++ {
 		v[i] = new(Vertex)
 		res.Parse(v[i])
-		v[i].Y, v[i].Z = v[i].Z, v[i].Y
 	}
 
 	return nil

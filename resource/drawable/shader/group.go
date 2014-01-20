@@ -10,7 +10,7 @@ import (
 type GroupHeader struct {
 	_                 uint32 /* vtable */
 	TextureDictionary types.Ptr32
-	resource.Collection
+	resource.PointerCollection
 }
 
 type Group struct {

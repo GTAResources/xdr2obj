@@ -12,7 +12,7 @@ type DictionaryHeader struct {
 	_                  uint32
 	_                  uint32
 	_                  resource.Collection
-	DrawableCollection resource.Collection
+	DrawableCollection resource.PointerCollection
 }
 
 type Dictionary struct {
@@ -23,7 +23,7 @@ type Dictionary struct {
 func (dict *Dictionary) Unpack(res *resource.Container) error {
 	res.Parse(&dict.Header)
 
-	dict.DrawableCollection.Collection = dict.Header.DrawableCollection
+	dict.DrawableCollection.PointerCollection = dict.Header.DrawableCollection
 	if err := dict.DrawableCollection.Unpack(res); err != nil {
 		return err
 	}

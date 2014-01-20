@@ -12,7 +12,7 @@ import (
 var NextUnnamedIndex int = 0
 
 type DrawableCollection struct {
-	resource.Collection
+	resource.PointerCollection
 	Drawables []*Drawable
 }
 

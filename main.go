@@ -113,12 +113,12 @@ func exportDrawable(res *resource.Container) {
 	/* Unpack the drawable */
 	drawable := new(drawable.Drawable)
 	if err := drawable.Unpack(res); err != nil {
-		log.Fatal(err)
+		panic(err)
 	}
 
 	/* Export it */
 	if err := obj.Export(drawable); err != nil {
-		log.Fatal(err)
+		panic(err)
 	}
 }
 
@@ -126,7 +126,8 @@ func exportDrawableDictionary(res *resource.Container) {
 	/* Unpack the dictionary */
 	dictionary := new(dictionary.Dictionary)
 	if err := dictionary.Unpack(res); err != nil {
-		log.Fatal(err)
+		panic(err)
+
 	}
 
 	/* Fix up the file names */
@@ -137,7 +138,7 @@ func exportDrawableDictionary(res *resource.Container) {
 	/* Export it */
 	for _, drawable := range dictionary.Drawables {
 		if err := obj.Export(drawable); err != nil {
-			log.Printf(err.Error())
+			panic(err)
 		}
 	}
 }
@@ -146,7 +147,7 @@ func exportFragType(res *resource.Container, title string) {
 	/* Unpack the frag type */
 	frag := new(frag.FragType)
 	if err := frag.Unpack(res); err != nil {
-		log.Fatal(err)
+		panic(err)
 	}
 
 	/* Drawables inside frag files dont seem to be named properly. */
@@ -154,7 +155,7 @@ func exportFragType(res *resource.Container, title string) {
 
 	/* Export it */
 	if err := obj.Export(&frag.Drawable); err != nil {
-		log.Fatal(err)
+		panic(err)
 	}
 }
 
@@ -162,7 +163,7 @@ func exportBoundsNodes(res *resource.Container) {
 	/* Unpack the nodes */
 	nodes := new(bounds.Nodes)
 	if err := nodes.Unpack(res); err != nil {
-		log.Fatal(err)
+		panic(err)
 	}
 
 	/* Export it */

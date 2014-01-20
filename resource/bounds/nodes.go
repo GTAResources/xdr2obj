@@ -23,7 +23,7 @@ type NodesHeader struct {
 	_            types.Ptr32
 	_            types.Ptr32
 	Count        uint16
-	Size         uint16
+	Capacity     uint16
 	_            types.Ptr32
 }
 
@@ -35,29 +35,39 @@ type Nodes struct {
 func (nodes *Nodes) Unpack(res *resource.Container) error {
 	res.Parse(&nodes.NodesHeader)
 
-	nodes.Volumes = make([]*Volume, nodes.Size)
-	volCollection := resource.Collection{
-		Lookup: nodes.BoundsTable,
-		Count:  nodes.Count,
-		Size:   nodes.Size,
+	var err error
+
+	nodes.Volumes = make([]*Volume, nodes.Capacity)
+	volCollection := resource.PointerCollection{
+		Addr:     nodes.BoundsTable,
+		Count:    nodes.Count,
+		Capacity: nodes.Capacity,
 	}
 
-	res.Detour(nodes.VolumeInfo, func() error {
-		for i := 0; i < int(nodes.Count); i++ {
-			nodes.Volumes[i] = new(Volume)
-			if err := nodes.Volumes[i].VolumeInfo.Unpack(res); err != nil {
-				return err
-			}
+	volInfoCollection := resource.Collection{
+		Addr:     nodes.VolumeInfo,
+		Count:    nodes.Count,
+		Capacity: nodes.Capacity,
+	}
+
+	err = volInfoCollection.For(res, func(i int) error {
+		nodes.Volumes[i] = new(Volume)
+		if err := nodes.Volumes[i].VolumeInfo.Unpack(res); err != nil {
+			return err
 		}
 		return nil
 	})
+	if err != nil {
+		return err
+	}
 
-	for i := 0; i < int(nodes.Count); i++ {
-		volCollection.Detour(res, i, func() error {
-			log.Printf("Volume %v at %v\n", i, res.Tell())
-			log.Printf("world coords: %v\n", nodes.Volumes[i].Center)
-			return nodes.Volumes[i].Unpack(res)
-		})
+	err = volCollection.For(res, func(i int) error {
+		log.Printf("Volume %v at %v\n", i, res.Tell())
+		log.Printf("world coords: %v\n", nodes.Volumes[i].Center)
+		return nodes.Volumes[i].Unpack(res)
+	})
+	if err != nil {
+		return err
 	}
 
 	/* test export - simple obj */
@@ -78,7 +88,7 @@ func (nodes *Nodes) Unpack(res *resource.Container) error {
 		fmt.Fprintf(file, "o volume_%v\n", i)
 		for _, v := range vol.Vertices {
 			x, y, z := float32(v.X)*scale.X, float32(v.Y)*scale.Y, float32(v.Z)*scale.Z
-			fmt.Fprintf(file, "v %v %v %v\n", x, y, z)
+			fmt.Fprintf(file, "v %v %v %v\n", x, z, y)
 		}
 
 		for _, i := range vol.Indices {

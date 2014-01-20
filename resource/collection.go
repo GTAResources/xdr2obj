@@ -1,45 +1,26 @@
 package resource
 
 import (
-	"log"
-
 	"github.com/tgascoigne/xdr2obj/resource/types"
 )
 
 type Collection struct {
-	Lookup types.Ptr32
-	Count  uint16
-	Size   uint16
+	Addr     types.Ptr32
+	Count    uint16
+	Capacity uint16
 }
 
-func (col *Collection) Detour(res *Container, i int, callback func() error) error {
-	addr, err := col.GetPtr(res, i)
-	if err != nil {
-		return err
-	}
-
-	return res.Detour(addr, callback)
+func (col *Collection) Detour(res *Container, callback func() error) error {
+	return res.Detour(col.Addr, callback)
 }
 
-func (col *Collection) JumpTo(res *Container, i int) error {
-	addr, err := col.GetPtr(res, i)
-	if err != nil {
-		return err
-	}
-
-	if err = res.Jump(addr); err != nil {
-		log.Printf("Error performing collection lookup")
-		return err
-	}
-
-	return nil
-}
-
-func (col *Collection) GetPtr(res *Container, i int) (types.Ptr32, error) {
-	var addr types.Ptr32
-	if err := res.PeekElem(col.Lookup, i, &addr); err != nil {
-		log.Printf("Error performing collection lookup")
-		return 0, err
-	}
-	return addr, nil
+func (col *Collection) For(res *Container, callback func(i int) error) error {
+	return col.Detour(res, func() error {
+		for i := 0; i < int(col.Count); i++ {
+			if err := callback(i); err != nil {
+				return err
+			}
+		}
+		return nil
+	})
 }
