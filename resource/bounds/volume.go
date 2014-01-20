@@ -47,6 +47,7 @@ type VolumeHeader struct {
 
 type Volume struct {
 	VolumeHeader
+	VolumeInfo
 	Vertices Vertices
 	Indices  Indices
 }

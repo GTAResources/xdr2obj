@@ -10,21 +10,21 @@ import (
 )
 
 type NodesHeader struct {
-	_           uint32
-	_           types.Ptr32
-	_           uint32
-	_           uint32
-	WorldCoords [4]types.Vec4
-	BoundingBox types.Vec4
-	BoundsTable types.Ptr32
-	Mat4        types.Ptr32 /* transformation matrix? */
-	_           types.Ptr32
-	_           types.Ptr32
-	_           types.Ptr32
-	_           types.Ptr32
-	Count       uint16
-	Size        uint16
-	_           types.Ptr32
+	_            uint32
+	_            types.Ptr32
+	_            uint32
+	_            uint32
+	WorldCoords  [4]types.Vec4
+	BoundingBox  types.Vec4
+	BoundsTable  types.Ptr32
+	VolumeMatrix types.Ptr32
+	_            types.Ptr32
+	VolumeInfo   types.Ptr32
+	_            types.Ptr32
+	_            types.Ptr32
+	Count        uint16
+	Size         uint16
+	_            types.Ptr32
 }
 
 type Nodes struct {
@@ -42,10 +42,20 @@ func (nodes *Nodes) Unpack(res *resource.Container) error {
 		Size:   nodes.Size,
 	}
 
+	res.Detour(nodes.VolumeInfo, func() error {
+		for i := 0; i < int(nodes.Count); i++ {
+			nodes.Volumes[i] = new(Volume)
+			if err := nodes.Volumes[i].VolumeInfo.Unpack(res); err != nil {
+				return err
+			}
+		}
+		return nil
+	})
+
 	for i := 0; i < int(nodes.Count); i++ {
 		volCollection.Detour(res, i, func() error {
-			log.Printf("volume %v at %v\n", i, res.Tell())
-			nodes.Volumes[i] = new(Volume)
+			log.Printf("Volume %v at %v\n", i, res.Tell())
+			log.Printf("world coords: %v\n", nodes.Volumes[i].Center)
 			return nodes.Volumes[i].Unpack(res)
 		})
 	}

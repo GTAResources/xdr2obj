@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"encoding/binary"
 	"fmt"
-	_ "log"
 
 	"github.com/tgascoigne/xdr2obj/resource"
 	"github.com/tgascoigne/xdr2obj/resource/types"
@@ -14,6 +13,7 @@ type Vertex struct {
 	/* This is the only information we can make use of for now */
 	types.WorldCoord          /* Position: Vertex.[X,Y,Z,W] */
 	UV0, UV1         types.UV /* UV: Vertex.[U,V] */
+	Color            uint32
 }
 
 func (vert *Vertex) Unpack(res *resource.Container, buf *VertexBuffer) error {
@@ -66,7 +66,6 @@ func (vert *Vertex) Unpack(res *resource.Container, buf *VertexBuffer) error {
 	}
 
 	if buf.Format.Supports(VertUV0) {
-		//		log.Printf("uv0 at %v", offset)
 		if err := binary.Read(reader, binary.BigEndian, &vert.UV0); err != nil {
 			return err
 		}
@@ -74,7 +73,6 @@ func (vert *Vertex) Unpack(res *resource.Container, buf *VertexBuffer) error {
 	}
 
 	if buf.Format.Supports(VertUV1) {
-		//		log.Printf("uv1 at %v", offset)
 		if err := binary.Read(reader, binary.BigEndian, &vert.UV1); err != nil {
 			return err
 		}
