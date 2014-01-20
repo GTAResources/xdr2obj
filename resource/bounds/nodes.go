@@ -77,7 +77,7 @@ func (nodes *Nodes) Unpack(res *resource.Container) error {
 
 		fmt.Fprintf(file, "o volume_%v\n", i)
 		for _, v := range vol.Vertices {
-			x, y, z := float32(v.X)*scale.Y, float32(v.Y)*scale.Y, float32(v.Z)*scale.Y
+			x, y, z := float32(v.X)*scale.X, float32(v.Y)*scale.Y, float32(v.Z)*scale.Z
 			fmt.Fprintf(file, "v %v %v %v\n", x, y, z)
 		}
 
