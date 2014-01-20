@@ -11,7 +11,7 @@ type TextureHeader struct {
 	_       uint32
 	_       uint32
 	_       resource.Collection
-	Bitmaps resource.Collection
+	Bitmaps resource.PointerCollection
 }
 
 type Texture struct {
@@ -22,7 +22,7 @@ type Texture struct {
 func (texture *Texture) Unpack(res *resource.Container) error {
 	res.Parse(&texture.Header)
 
-	texture.Bitmaps = make(Bitmaps, texture.Header.Bitmaps.Size)
+	texture.Bitmaps = make(Bitmaps, texture.Header.Bitmaps.Capacity)
 	if err := texture.Bitmaps.Unpack(res, &texture.Header.Bitmaps); err != nil {
 		return err
 	}

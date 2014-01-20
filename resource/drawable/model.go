@@ -8,13 +8,13 @@ import (
 )
 
 type ModelCollection struct {
-	resource.Collection
+	resource.PointerCollection
 	Models []*Model
 }
 
 type ModelHeader struct {
 	_                  uint32 /* vtable */
-	GeometryCollection resource.Collection
+	GeometryCollection resource.PointerCollection
 	_                  types.Ptr32 /* Ptr to vectors */
 	ShaderMappings     types.Ptr32
 }
@@ -25,7 +25,7 @@ type Model struct {
 }
 
 func (col *ModelCollection) Unpack(res *resource.Container) error {
-	res.Parse(&col.Collection)
+	res.Parse(&col.PointerCollection)
 
 	col.Models = make([]*Model, col.Count)
 	for i := range col.Models {
@@ -51,36 +51,30 @@ func (col *ModelCollection) Unpack(res *resource.Container) error {
 func (model *Model) Unpack(res *resource.Container) error {
 	res.Parse(&model.Header)
 
-	col := &model.Header.GeometryCollection
+	geomCollection := &model.Header.GeometryCollection
 
-	model.Geometry = make([]*Geometry, col.Count)
+	model.Geometry = make([]*Geometry, geomCollection.Count)
 	for i := range model.Geometry {
 		model.Geometry[i] = new(Geometry)
 	}
 
-	for i, geom := range model.Geometry {
-		if err := col.JumpTo(res, i); err != nil {
-			log.Printf("Error reading geometry")
-			return err
-		}
-
-		if err := geom.Unpack(res); err != nil {
-			log.Printf("Error reading geometry")
+	err := geomCollection.For(res, func(i int) error {
+		geometry := model.Geometry[i]
+		if err := geometry.Unpack(res); err != nil {
 			return err
 		}
 
 		if model.Header.ShaderMappings.Valid() {
-			if err := res.PeekElem(model.Header.ShaderMappings, i, &geom.Shader); err != nil {
+			if err := res.PeekElem(model.Header.ShaderMappings, i, &geometry.Shader); err != nil {
 				return err
 			}
 		} else {
-			geom.Shader = ShaderNone
+			geometry.Shader = ShaderNone
 		}
-
-		if err := res.Return(); err != nil {
-			log.Printf("Error reading geometry")
-			return err
-		}
+		return nil
+	})
+	if err != nil {
+		return err
 	}
 
 	return nil

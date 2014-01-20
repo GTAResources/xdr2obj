@@ -1,8 +1,6 @@
 package texture
 
 import (
-	"log"
-
 	"github.com/tgascoigne/xdr2obj/resource"
 	"github.com/tgascoigne/xdr2obj/resource/types"
 )
@@ -26,7 +24,7 @@ type Bitmap struct {
 	Title  string
 }
 
-func (b Bitmaps) Unpack(res *resource.Container, col *resource.Collection) error {
+func (b Bitmaps) Unpack(res *resource.Container, col *resource.PointerCollection) error {
 	for i := 0; i < cap(b); i++ {
 		if err := col.Detour(res, i, func() error {
 			b[i] = new(Bitmap)
@@ -44,7 +42,6 @@ func (b *Bitmap) Unpack(res *resource.Container) error {
 	if b.Header.Title.Valid() {
 		res.Detour(b.Header.Title, func() error {
 			res.Parse(&b.Title)
-			log.Printf("%v\n", b.Title)
 			return nil
 		})
 	}

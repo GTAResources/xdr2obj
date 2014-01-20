@@ -11,7 +11,7 @@ import (
 type GroupHeader struct {
 	_          uint32 /* vtable */
 	TexturePtr types.Ptr32
-	resource.Collection
+	resource.PointerCollection
 }
 
 type Group struct {
