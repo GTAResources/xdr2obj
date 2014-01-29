@@ -43,6 +43,12 @@ type Vec3 struct {
 	Z float32
 }
 
+type Vec3i struct {
+	X int16
+	Y int16
+	Z int16
+}
+
 type Vec3h struct {
 	X Float16
 	Y Float16
@@ -64,4 +70,11 @@ type Tri struct {
 	A uint16
 	B uint16
 	C uint16
+}
+
+type Quad struct {
+	A uint16
+	B uint16
+	C uint16
+	D uint16
 }

@@ -63,7 +63,6 @@ func (nodes *Nodes) Unpack(res *resource.Container) error {
 
 	err = volCollection.For(res, func(i int) error {
 		log.Printf("Volume %v at %v\n", i, res.Tell())
-		log.Printf("world coords: %v\n", nodes.Volumes[i].Center)
 		return nodes.Volumes[i].Unpack(res)
 	})
 	if err != nil {
@@ -78,20 +77,14 @@ func (nodes *Nodes) Unpack(res *resource.Container) error {
 		}
 		defer file.Close()
 
-		numVerts := int(vol.VertexCount)
-
-		log.Printf("%v verts\n", numVerts)
-		log.Printf("%v faces\n", len(vol.Indices))
-
-		scale := vol.ScaleFactor
-
 		fmt.Fprintf(file, "o volume_%v\n", i)
+
 		for _, v := range vol.Vertices {
-			x, y, z := float32(v.X)*scale.X, float32(v.Y)*scale.Y, float32(v.Z)*scale.Z
+			x, y, z := float32(v.X), float32(v.Y), float32(v.Z)
 			fmt.Fprintf(file, "v %v %v %v\n", x, z, y)
 		}
 
-		for _, i := range vol.Indices {
+		for _, i := range vol.Faces {
 			a, b, c := i.A+1, i.B+1, i.C+1
 			fmt.Fprintf(file, "f %v %v %v\n", a, b, c)
 		}
