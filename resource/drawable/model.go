@@ -14,7 +14,7 @@ type ModelCollection struct {
 
 type ModelHeader struct {
 	_                  uint32 /* vtable */
-	GeometryCollection resource.Collection
+	GeometryCollection resource.PointerCollection
 	_                  types.Ptr32 /* Ptr to vectors */
 	ShaderMappings     types.Ptr32
 }
