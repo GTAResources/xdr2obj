@@ -80,7 +80,7 @@ func (nodes *Nodes) Unpack(res *resource.Container) error {
 		fmt.Fprintf(file, "o volume_%v\n", i)
 
 		for _, v := range vol.Vertices {
-			x, y, z := float32(v.X), float32(v.Y), float32(v.Z)
+			x, y, z := float32(v[0]), float32(v[1]), float32(v[2])
 			fmt.Fprintf(file, "v %v %v %v\n", x, z, y)
 		}
 

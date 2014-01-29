@@ -32,49 +32,14 @@ type UV struct {
 	V Float16
 }
 
-type Vec2 struct {
-	X float32
-	Y float32
-}
-
-type Vec3 struct {
-	X float32
-	Y float32
-	Z float32
-}
-
-type Vec3i struct {
-	X int16
-	Y int16
-	Z int16
-}
-
-type Vec3h struct {
-	X Float16
-	Y Float16
-	Z Float16
-}
-
-type Vec4 struct {
-	X float32
-	Y float32
-	Z float32
-	W float32
-}
-
-type WorldCoord Vec3
-
-type WorldCoordh Vec3h
-
 type Tri struct {
 	A uint16
 	B uint16
 	C uint16
 }
 
-type Quad struct {
-	A uint16
-	B uint16
-	C uint16
-	D uint16
-}
+type Vec3i [3]int16
+type Vec3h [3]Float16
+type WorldCoord Vec3
+
+type WorldCoordh Vec3h

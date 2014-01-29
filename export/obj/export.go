@@ -121,7 +121,7 @@ func exportGeometry(geom *drawable.Geometry, file *os.File, name string) error {
 	}
 
 	for _, vert := range geom.Vertices.Vertex {
-		fmt.Fprintf(file, "v %v %v %v\n", vert.X, vert.Y, vert.Z)
+		fmt.Fprintf(file, "v %v %v %v\n", vert.WorldCoord[0], vert.WorldCoord[1], vert.WorldCoord[2])
 		if geom.Vertices.Format.Supports(drawable.VertUV0) {
 			u := vert.UV0.U.Value()
 			v := (-vert.UV0.V.Value()) + 1
