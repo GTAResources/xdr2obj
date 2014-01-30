@@ -23,6 +23,7 @@ var (
 
 func main() {
 	var mergeFile = flag.String("merge", "", "The basename of a file to merge all output to")
+	flag.BoolVar(&export.FlipYZ, "flip", false, "Flip the Z and Y axes")
 	flag.Parse()
 
 	log.SetFlags(0)
