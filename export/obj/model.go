@@ -26,7 +26,7 @@ func ExportModel(ctx *Context, model *export.Model) error {
 		}
 
 		for _, vert := range mesh.Vertices {
-			x, z, y := vert.Pos[0], vert.Pos[1], vert.Pos[2]
+			x, y, z := vert.Pos[0], vert.Pos[1], vert.Pos[2]
 			if export.FlipYZ {
 				y, z = z, y
 			}
