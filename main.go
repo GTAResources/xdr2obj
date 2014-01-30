@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/tgascoigne/xdr2obj/export"
 	"github.com/tgascoigne/xdr2obj/export/obj"
 	"github.com/tgascoigne/xdr2obj/resource"
 	"github.com/tgascoigne/xdr2obj/resource/bounds"
@@ -26,11 +27,7 @@ func main() {
 
 	log.SetFlags(0)
 
-	if *mergeFile != "" {
-		obj.OpenDestFile(*mergeFile)
-		defer obj.CloseDestFile()
-	}
-
+	inputFiles := make([]string, 0)
 	converted := 0
 	defer func() {
 		log.Printf("Converted %v models\n", converted)
@@ -38,24 +35,60 @@ func main() {
 
 	if flag.NArg() > 0 {
 		for _, s := range flag.Args() {
-			func() {
-				defer func() {
-					if err := recover(); err != nil {
-						log.Printf("Unable to convert %v\n", s)
-						panic(err)
-					}
-				}()
-				log.Printf("Converting %v..\n", s)
-				processModel(s)
-				log.Printf("done\n")
-				converted++
-			}()
+			inputFiles = append(inputFiles, s)
 		}
-		return
+	} else {
+		inputFiles = locateInputFiles("./")
 	}
 
 	/* Convert all supported models in directory */
-	files, err := ioutil.ReadDir("./")
+
+	var object *export.ModelGroup
+
+	if *mergeFile != "" {
+		object = export.NewModelGroup()
+		object.Name = *mergeFile
+	}
+
+	for _, filePath := range inputFiles {
+		func() {
+			defer func() {
+				if err := recover(); err != nil {
+					log.Printf("Unable to convert %v\n", filePath)
+					panic(err)
+				}
+			}()
+
+			log.Printf("Converting %v.. ", filePath)
+
+			if *mergeFile == "" {
+				object = export.NewModelGroup()
+			}
+
+			processModel(filePath, object)
+			converted++
+
+			if *mergeFile == "" {
+				if err := obj.Export(object); err != nil {
+					log.Printf(err.Error())
+				}
+			}
+
+			log.Printf("done\n")
+		}()
+	}
+
+	if *mergeFile != "" {
+		if err := obj.Export(object); err != nil {
+			log.Printf(err.Error())
+		}
+	}
+
+}
+
+func locateInputFiles(path string) []string {
+	inFiles := make([]string, 0)
+	files, err := ioutil.ReadDir(path)
 	if err != nil {
 		panic(err)
 	}
@@ -63,26 +96,15 @@ func main() {
 	for _, f := range files {
 		for _, ext := range SupportedExtensions {
 			if strings.Contains(f.Name(), ext) {
-				func() {
-					defer func() {
-						if err := recover(); err != nil {
-							log.Printf("Unable to convert %v\n", f.Name())
-							panic(err)
-						}
-					}()
-					filePath := fmt.Sprintf("./%v", f.Name())
-					log.Printf("Converting %v..\n", filePath)
-					processModel(filePath)
-					log.Printf("done\n")
-					converted++
-				}()
+				filePath := fmt.Sprintf("./%v", f.Name())
+				inFiles = append(inFiles, filePath)
 			}
 		}
 	}
-
+	return inFiles
 }
 
-func processModel(inFile string) {
+func processModel(inFile string, object *export.ModelGroup) {
 	var data []byte
 	var err error
 
@@ -97,32 +119,31 @@ func processModel(inFile string) {
 		panic(err)
 	}
 
+	baseName := filepath.Base(inFile)
+	baseName = baseName[:strings.LastIndex(baseName, ".")]
+
 	switch {
 	case filepath.Ext(inFile) == ".xdr":
-		exportDrawable(res)
+		object.Merge(unpackDrawable(res))
 	case filepath.Ext(inFile) == ".xdd":
-		exportDrawableDictionary(res)
+		object.Merge(unpackDrawableDictionary(res, baseName))
 	case filepath.Ext(inFile) == ".xft":
-		exportFragType(res, filepath.Base(inFile))
+		object.Merge(unpackFragType(res, baseName))
 	case filepath.Ext(inFile) == ".xbn":
-		exportBoundsNodes(res)
+		object.Merge(unpackBoundsNodes(res, baseName))
 	}
 }
 
-func exportDrawable(res *resource.Container) {
-	/* Unpack the drawable */
+func unpackDrawable(res *resource.Container) export.Exportable {
 	drawable := new(drawable.Drawable)
 	if err := drawable.Unpack(res); err != nil {
 		panic(err)
 	}
 
-	/* Export it */
-	if err := obj.Export(drawable); err != nil {
-		panic(err)
-	}
+	return drawable.Model
 }
 
-func exportDrawableDictionary(res *resource.Container) {
+func unpackDrawableDictionary(res *resource.Container, title string) export.Exportable {
 	/* Unpack the dictionary */
 	dictionary := new(dictionary.Dictionary)
 	if err := dictionary.Unpack(res); err != nil {
@@ -130,20 +151,21 @@ func exportDrawableDictionary(res *resource.Container) {
 
 	}
 
-	/* Fix up the file names */
-	for i, drawable := range dictionary.Drawables {
-		drawable.Title = strings.Replace(drawable.Title, ".#dd", fmt.Sprintf("_%v.#dd", i), -1)
-	}
-
-	/* Export it */
+	group := export.NewModelGroup()
+	group.Name = title
 	for _, drawable := range dictionary.Drawables {
-		if err := obj.Export(drawable); err != nil {
-			panic(err)
+		idx := strings.LastIndex(drawable.Title, ".")
+		if idx != -1 {
+			drawable.Title = drawable.Title[:strings.LastIndex(drawable.Title, ".")]
 		}
+
+		drawable.Model.Name = drawable.Title
+		group.Add(drawable.Model)
 	}
+	return group
 }
 
-func exportFragType(res *resource.Container, title string) {
+func unpackFragType(res *resource.Container, title string) export.Exportable {
 	/* Unpack the frag type */
 	frag := new(frag.FragType)
 	if err := frag.Unpack(res); err != nil {
@@ -151,25 +173,20 @@ func exportFragType(res *resource.Container, title string) {
 	}
 
 	/* Drawables inside frag files dont seem to be named properly. */
-	frag.Drawable.Title = title
+	frag.Drawable.Model.Name = title
 
-	/* Export it */
-	if err := obj.Export(&frag.Drawable); err != nil {
-		panic(err)
-	}
+	return frag.Drawable.Model
 }
 
-func exportBoundsNodes(res *resource.Container) {
+func unpackBoundsNodes(res *resource.Container, title string) export.Exportable {
 	/* Unpack the nodes */
 	nodes := new(bounds.Nodes)
+
 	if err := nodes.Unpack(res); err != nil {
 		panic(err)
 	}
 
-	/* Export it */
-	/*	for _, drawable := range nodes.Drawables {
-		if err := obj.Export(drawable); err != nil {
-			log.Printf(err.Error())
-		}
-	}*/
+	nodes.Model.Name = title
+
+	return nodes.Model
 }

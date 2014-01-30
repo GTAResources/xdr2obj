@@ -8,7 +8,7 @@ import (
 )
 
 func buildCube(mesh *export.Mesh, a, b, c, d uint16) {
-	A, B, C, D := mesh.Vertices[a], mesh.Vertices[b], mesh.Vertices[c], mesh.Vertices[d]
+	A, B, C, D := mesh.Vertices[a].Pos, mesh.Vertices[b].Pos, mesh.Vertices[c].Pos, mesh.Vertices[d].Pos
 
 	/* find the center point */
 	center := A.Add(B).Add(C).Add(D).Mul(float32(0.25))
@@ -40,14 +40,14 @@ func buildCube(mesh *export.Mesh, a, b, c, d uint16) {
 	H := findMissing(B, D, C)
 
 	/* Create the faces */
-	mesh.AddVert(H)
-	mesh.AddVert(G)
-	mesh.AddVert(F)
-	mesh.AddVert(E)
-	mesh.AddVert(D)
-	mesh.AddVert(C)
-	mesh.AddVert(B)
-	mesh.AddVert(A)
+	mesh.AddVert4f(H)
+	mesh.AddVert4f(G)
+	mesh.AddVert4f(F)
+	mesh.AddVert4f(E)
+	mesh.AddVert4f(D)
+	mesh.AddVert4f(C)
+	mesh.AddVert4f(B)
+	mesh.AddVert4f(A)
 
 	a, b, c, d = mesh.Rel(-1), mesh.Rel(-2), mesh.Rel(-3), mesh.Rel(-4)
 	e, f, g, h := mesh.Rel(-5), mesh.Rel(-6), mesh.Rel(-7), mesh.Rel(-8)

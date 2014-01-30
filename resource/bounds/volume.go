@@ -2,7 +2,6 @@ package bounds
 
 import (
 	"fmt"
-	"log"
 
 	"github.com/Jragonmiris/mathgl"
 
@@ -61,12 +60,10 @@ func (vol *Volume) Unpack(res *resource.Container) error {
 	vol.Mesh = export.NewMesh()
 
 	res.Detour(vol.VerticesAddr, func() error {
-		log.Printf("verts at %x size %x\n", res.Tell(), vol.VertexCount*6)
 		return vol.unpackVertices(res)
 	})
 
 	res.Detour(vol.IndicesAddr, func() error {
-		log.Printf("indices at %x size %x\n", res.Tell(), vol.IndexCount*16)
 		return vol.unpackFaces(res)
 	})
 
@@ -81,7 +78,7 @@ func (vol *Volume) unpackVertices(res *resource.Container) error {
 		y := (float32(iVec[1]) * vol.ScaleFactor[1]) + vol.Offset[1]
 		z := (float32(iVec[2]) * vol.ScaleFactor[2]) + vol.Offset[2]
 		v := mathgl.Vec4f{x, y, z, 1.0}
-		vol.AddVert(v)
+		vol.AddVert4f(v)
 	}
 
 	return nil
@@ -111,7 +108,7 @@ func (vol *Volume) unpackFaces(res *resource.Container) error {
 
 		polygonType &= 0xF
 		if polygonType == 0x4 {
-			debug(junk, polygonType, idxValues)
+			//			debug(junk, polygonType, idxValues)
 		} else if polygonType == 0x3 || polygonType == 0xB {
 			/* cube, 4 points specified */
 			a := fixIndex(idxValues[0])
@@ -125,7 +122,7 @@ func (vol *Volume) unpackFaces(res *resource.Container) error {
 			b := fixIndex(idxValues[2])
 			traceVerts(vol.Mesh, a, b)
 		} else if polygonType == 0x1 {
-			debug(junk, polygonType, idxValues)
+			//			debug(junk, polygonType, idxValues)
 		} else if polygonType == 0x0 || polygonType == 0x8 { /* it's probably a triangle */
 			a := fixIndex(idxValues[0])
 			b := fixIndex(idxValues[1])
@@ -146,6 +143,7 @@ func traceVerts(mesh *export.Mesh, verts ...uint16) {
 	if len(verts) < 2 {
 		panic("not enough verts to trace")
 	}
+
 	for i := 1; i < len(verts); i++ {
 		mesh.AddVert(mesh.Vertices[verts[i]])
 		mesh.AddVert(mesh.Vertices[verts[i]])

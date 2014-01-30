@@ -1,10 +1,7 @@
 package bounds
 
 import (
-	"fmt"
-	"log"
-	"os"
-
+	"github.com/tgascoigne/xdr2obj/export"
 	"github.com/tgascoigne/xdr2obj/resource"
 	"github.com/tgascoigne/xdr2obj/resource/types"
 )
@@ -30,6 +27,7 @@ type NodesHeader struct {
 type Nodes struct {
 	NodesHeader
 	Volumes []*Volume
+	Model   *export.Model
 }
 
 func (nodes *Nodes) Unpack(res *resource.Container) error {
@@ -62,32 +60,15 @@ func (nodes *Nodes) Unpack(res *resource.Container) error {
 	}
 
 	err = volCollection.For(res, func(i int) error {
-		log.Printf("Volume %v at %v\n", i, res.Tell())
 		return nodes.Volumes[i].Unpack(res)
 	})
 	if err != nil {
 		return err
 	}
 
-	/* test export - simple obj */
-	for i, vol := range nodes.Volumes {
-		file, err := os.Create(fmt.Sprintf("volume_%v.obj", i))
-		if err != nil {
-			panic(err)
-		}
-		defer file.Close()
-
-		fmt.Fprintf(file, "o volume_%v\n", i)
-
-		for _, v := range vol.Vertices {
-			x, y, z := float32(v[0]), float32(v[1]), float32(v[2])
-			fmt.Fprintf(file, "v %v %v %v\n", x, z, y)
-		}
-
-		for _, i := range vol.Faces {
-			a, b, c := i.A+1, i.B+1, i.C+1
-			fmt.Fprintf(file, "f %v %v %v\n", a, b, c)
-		}
+	nodes.Model = export.NewModel()
+	for _, vol := range nodes.Volumes {
+		nodes.Model.AddMesh(vol.Mesh)
 	}
 
 	return nil

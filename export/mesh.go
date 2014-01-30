@@ -8,20 +8,34 @@ import (
 	"github.com/tgascoigne/xdr2obj/resource/types"
 )
 
+type Vertex struct {
+	Pos mathgl.Vec4f
+	UV  mathgl.Vec2f
+}
+
 type Mesh struct {
-	Vertices []mathgl.Vec4f
+	Vertices []Vertex
 	Faces    []types.Tri
+	Material int
 }
 
 func NewMesh() *Mesh {
 	return &Mesh{
-		Vertices: make([]mathgl.Vec4f, 0),
+		Vertices: make([]Vertex, 0),
 		Faces:    make([]types.Tri, 0),
+		Material: -1,
 	}
 }
 
-func (mesh *Mesh) AddVert(pos mathgl.Vec4f) {
+func (mesh *Mesh) AddVert(pos Vertex) {
 	mesh.Vertices = append(mesh.Vertices, pos)
+}
+
+func (mesh *Mesh) AddVert4f(pos mathgl.Vec4f) {
+	v := Vertex{
+		Pos: pos,
+	}
+	mesh.AddVert(v)
 }
 
 func (mesh *Mesh) Rel(idx int) uint16 {
