@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/binary"
 
+	"github.com/tgascoigne/xdr2obj/export"
 	"github.com/tgascoigne/xdr2obj/resource"
 	"github.com/tgascoigne/xdr2obj/resource/types"
 )
@@ -21,7 +22,7 @@ type VertexHeader struct {
 }
 
 type VertexInfo struct {
-	Format VertexFormat
+	Format export.VertexFormat
 	_      uint16 /* Stride */
 	_      uint16 /* correlated with Stride */
 	_      uint32 /* usually 0xAA111111 */

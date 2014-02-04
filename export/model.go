@@ -40,6 +40,7 @@ type Model struct {
 	Name      string
 	Meshes    []*Mesh
 	Materials []*Material
+	Extra     interface{}
 }
 
 func NewModel() *Model {

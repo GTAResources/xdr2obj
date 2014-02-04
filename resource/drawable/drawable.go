@@ -116,7 +116,8 @@ func (drawable *Drawable) Unpack(res *resource.Container) error {
 			mesh.Material = int(geom.Shader)
 
 			for _, vert := range geom.Vertices.Vertex {
-				vert := export.Vertex{
+				/* Even if a feature isn't supported, the nil value should be fine */
+				newVert := export.Vertex{
 					Pos: mathgl.Vec4f{
 						vert.WorldCoord[0],
 						vert.WorldCoord[1],
@@ -127,9 +128,12 @@ func (drawable *Drawable) Unpack(res *resource.Container) error {
 						vert.UV0.U.Value(),
 						(-vert.UV0.V.Value()) + 1,
 					},
+					Colour: vert.Colour,
 				}
-				mesh.AddVert(vert)
+
+				mesh.AddVert(newVert)
 			}
+			mesh.Format = geom.Vertices.Format
 
 			for _, face := range geom.Indices.Index {
 				mesh.AddFace(*face)

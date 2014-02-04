@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	"github.com/tgascoigne/xdr2obj/export"
+	"github.com/tgascoigne/xdr2obj/export/dae"
 	"github.com/tgascoigne/xdr2obj/export/obj"
 	"github.com/tgascoigne/xdr2obj/resource"
 	"github.com/tgascoigne/xdr2obj/resource/bounds"
@@ -24,6 +25,7 @@ var (
 func main() {
 	var mergeFile = flag.String("merge", "", "The basename of a file to merge all output to")
 	flag.BoolVar(&export.FlipYZ, "flip", false, "Flip the Z and Y axes")
+	var outputObj = flag.Bool("obj", false, "Output to OBJ instead of DAE")
 	flag.Parse()
 
 	log.SetFlags(0)
@@ -46,9 +48,22 @@ func main() {
 
 	var object *export.ModelGroup
 
+	var exportFunc func(export.Exportable) error
+	if *outputObj {
+		exportFunc = obj.Export
+	} else {
+		exportFunc = dae.Export
+	}
+
 	if *mergeFile != "" {
 		object = export.NewModelGroup()
 		object.Name = *mergeFile
+	}
+
+	doExport := func(o export.Exportable) {
+		if err := exportFunc(o); err != nil {
+			log.Printf(err.Error())
+		}
 	}
 
 	for _, filePath := range inputFiles {
@@ -70,9 +85,7 @@ func main() {
 			converted++
 
 			if *mergeFile == "" {
-				if err := obj.Export(object); err != nil {
-					log.Printf(err.Error())
-				}
+				doExport(object)
 			}
 
 			log.Printf("done\n")
@@ -80,9 +93,7 @@ func main() {
 	}
 
 	if *mergeFile != "" {
-		if err := obj.Export(object); err != nil {
-			log.Printf(err.Error())
-		}
+		doExport(object)
 	}
 
 }

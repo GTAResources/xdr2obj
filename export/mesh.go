@@ -9,11 +9,13 @@ import (
 )
 
 type Vertex struct {
-	Pos mathgl.Vec4f
-	UV  mathgl.Vec2f
+	Pos    mathgl.Vec4f
+	UV     mathgl.Vec2f
+	Colour uint32
 }
 
 type Mesh struct {
+	Format   VertexFormat
 	Vertices []Vertex
 	Faces    []types.Tri
 	Material int

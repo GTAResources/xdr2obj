@@ -27,12 +27,12 @@ func ExportModel(ctx *Context, model *export.Model) error {
 
 		for _, vert := range mesh.Vertices {
 			x, y, z := vert.Pos[0], vert.Pos[1], vert.Pos[2]
+			u, v := vert.UV[0], vert.UV[1]
 			if export.FlipYZ {
 				y, z = z, y
 			}
-			fmt.Fprintf(ctx.ObjFile, "v %v %v %v\n", x, y, z)
 
-			u, v := vert.UV[0], vert.UV[1]
+			fmt.Fprintf(ctx.ObjFile, "v %v %v %v\n", x, y, z)
 			fmt.Fprintf(ctx.ObjFile, "vt %v %v\n", u, v)
 		}
 
